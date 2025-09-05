@@ -10,7 +10,8 @@ members = [
     "sdk/log/macro",
     "sdk/pinocchio",
     "sdk/pubkey",
-    "tests",
+    # "tests",
+    "examples/*",
 ]
 
 [workspace.package]
@@ -28,8 +29,17 @@ quote = "1.0"
 regex = "1"
 syn = "1.0"
 
-pinocchio-token = { path = "./programs/token" }
+# spl cpi
+spl-token-2022-interface = "2.0.0"
 
+# pinocchio cpi
+pinocchio-token = { path = "./programs/token" }
+pinocchio-token-2022 = { path = "./programs/token-2022" }
+
+# cpi callers
+token-2022-caller = { path = "./examples/token-2022-caller" }
+
+# test dependencies
 strum = "0.24.1"
 strum_macros = "0.24.3"
 pretty_assertions = "1.4.1"

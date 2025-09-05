@@ -1,0 +1,21 @@
+[package]
+name = "token-2022-caller"
+version = "1.0.0"
+description = "A program to test Token-2022 Pinocchio CPI"
+repository = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+std = []
+
+[dependencies]
+pinocchio = { workspace = true }
+pinocchio-pubkey = { workspace = true }
+pinocchio-token-2022 = { workspace = true }
+spl-token-2022-interface = { workspace = true }
+bytemuck = { workspace = true }
