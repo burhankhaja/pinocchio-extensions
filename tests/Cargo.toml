@@ -44,6 +44,7 @@ solana-signer = { workspace = true }
 solana-transaction = { workspace = true }
 solana-program = { workspace = true }
 solana-program-option = { workspace = true }
+solana-program-pack = { workspace = true }
 solana-compute-budget = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }

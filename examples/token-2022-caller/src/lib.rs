@@ -9,8 +9,8 @@ use {
     spl_token_2022_interface::instruction::TokenInstruction,
 };
 
+pub mod helpers;
 mod instructions;
-pub mod serde;
 
 use instructions as i;
 
