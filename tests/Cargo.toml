@@ -40,5 +40,4 @@ solana-program = { workspace = true }
 solana-compute-budget = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
-solana-kite = { workspace = true }
 bytemuck = { workspace = true }

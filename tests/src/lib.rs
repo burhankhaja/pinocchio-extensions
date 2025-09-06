@@ -8,6 +8,7 @@ pub mod helpers {
 
     pub mod suite {
         pub mod core;
+        pub mod solana_kite;
         pub mod types;
     }
 }

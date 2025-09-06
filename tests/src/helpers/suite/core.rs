@@ -1,6 +1,9 @@
 use {
     crate::helpers::suite::{
-        core::sol_kite::create_token_mint,
+        solana_kite::{
+            create_associated_token_account, create_token_mint, deploy_program,
+            get_token_account_balance, mint_tokens_to_account,
+        },
         types::{
             AppAsset, AppCoin, AppToken, AppUser, GetDecimals, SolPubkey, TestError, TestResult,
         },
@@ -11,7 +14,6 @@ use {
     solana_compute_budget::compute_budget::ComputeBudget,
     solana_instruction::{AccountMeta, Instruction},
     solana_keypair::Keypair,
-    solana_kite::{deploy_program, get_token_account_balance, mint_tokens_to_account},
     solana_program::{
         clock::Clock, native_token::LAMPORTS_PER_SOL, program_option::COption, program_pack::Pack,
         system_instruction, system_program,
@@ -25,98 +27,6 @@ use {
 };
 
 pub const PROGRAM_NAME_TOKEN: &str = "token";
-
-pub mod sol_kite {
-    use {
-        litesvm::LiteSVM, solana_keypair::Keypair, solana_kite::SolanaKiteError,
-        solana_message::Message, solana_pubkey::Pubkey, solana_signer::Signer,
-        solana_transaction::Transaction,
-        spl_associated_token_account::instruction::create_associated_token_account as create_ata_instruction,
-    };
-
-    pub fn create_associated_token_account(
-        litesvm: &mut LiteSVM,
-        owner: &Pubkey,
-        mint: &Pubkey,
-        payer: &Keypair,
-    ) -> Result<Pubkey, SolanaKiteError> {
-        let associated_token_account =
-            spl_associated_token_account::get_associated_token_address(owner, mint);
-
-        let create_ata_instruction =
-            create_ata_instruction(&payer.pubkey(), owner, mint, &spl_token::id());
-
-        let message = Message::new(&[create_ata_instruction], Some(&payer.pubkey()));
-        let mut transaction = Transaction::new_unsigned(message);
-        let blockhash = litesvm.latest_blockhash();
-        transaction.sign(&[payer], blockhash);
-
-        litesvm.send_transaction(transaction).map_err(|e| {
-            SolanaKiteError::TokenOperationFailed(format!(
-                "Failed to create associated token account: {:?}",
-                e
-            ))
-        })?;
-
-        Ok(associated_token_account)
-    }
-
-    pub fn create_token_mint(
-        litesvm: &mut LiteSVM,
-        mint_authority: &Keypair,
-        decimals: u8,
-        mint: Option<Pubkey>,
-    ) -> Result<Pubkey, SolanaKiteError> {
-        let mint = mint.unwrap_or(Pubkey::new_unique());
-        let rent = litesvm.minimum_balance_for_rent_exemption(82);
-
-        litesvm
-            .set_account(
-                mint,
-                solana_account::Account {
-                    lamports: rent,
-                    data: vec![0u8; 82],
-                    owner: spl_token::ID,
-                    executable: false,
-                    rent_epoch: 0,
-                },
-            )
-            .map_err(|e| {
-                SolanaKiteError::TokenOperationFailed(format!(
-                    "Failed to create mint account: {:?}",
-                    e
-                ))
-            })?;
-
-        let initialize_mint_instruction = spl_token::instruction::initialize_mint(
-            &spl_token::ID,
-            &mint,
-            &mint_authority.pubkey(),
-            None,
-            decimals,
-        )
-        .map_err(|e| {
-            SolanaKiteError::TokenOperationFailed(format!(
-                "Failed to create initialize mint instruction: {:?}",
-                e
-            ))
-        })?;
-
-        let message = Message::new(
-            &[initialize_mint_instruction],
-            Some(&mint_authority.pubkey()),
-        );
-        let mut transaction = Transaction::new_unsigned(message);
-        let blockhash = litesvm.latest_blockhash();
-        transaction.sign(&[mint_authority], blockhash);
-
-        litesvm.send_transaction(transaction).map_err(|e| {
-            SolanaKiteError::TokenOperationFailed(format!("Failed to initialize mint: {:?}", e))
-        })?;
-
-        Ok(mint)
-    }
-}
 
 pub struct ProgramId {
     // standard
@@ -395,7 +305,7 @@ impl App {
         owner: &Pubkey,
         mint: &Pubkey,
     ) -> TestResult<Pubkey> {
-        sol_kite::create_associated_token_account(litesvm, owner, mint, sender)
+        create_associated_token_account(litesvm, owner, mint, sender)
             .map_err(TestError::from_unknown)
     }
 }
