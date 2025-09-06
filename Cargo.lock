@@ -5284,11 +5284,12 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 name = "token-2022-caller"
 version = "1.0.0"
 dependencies = [
- "bytemuck",
  "pinocchio",
  "pinocchio-log-macro",
  "pinocchio-pubkey",
  "pinocchio-token-2022",
+ "solana-address",
+ "solana-program-option 3.0.0",
  "spl-token-2022-interface",
 ]
 

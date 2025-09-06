@@ -1,48 +1,38 @@
 use {
-    crate::serde::{deserialize, deserialize_unchecked, from_pod_c_option, show},
-    bytemuck::{Pod, Zeroable},
-    pinocchio::{
-        account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey, ProgramResult,
-    },
+    crate::serde::{from_c_option, show},
+    pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult},
     pinocchio_token_2022,
-    spl_token_2022_interface::pod::PodCOption,
+    solana_address::Address,
+    solana_program_option::COption,
 };
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable)]
-#[repr(C)]
-pub struct InstructionData {
-    pub decimals: u8,
-    pub mint_authority: Pubkey,
-    pub freeze_authority: PodCOption<Pubkey>,
-    pub token_program: Pubkey,
-}
-
-pub fn initialize_mint(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResult {
+pub fn initialize_mint(
+    accounts: &[AccountInfo],
+    decimals: u8,
+    mint_authority: Address,
+    freeze_authority: COption<Address>,
+) -> ProgramResult {
     let [mint, rent_sysvar] = accounts else {
         Err(ProgramError::InvalidAccountData)?
     };
-    show("mint", mint);
-    show("rent_sysvar", rent_sysvar);
 
-    show("instruction_data", instruction_data);
-    let ix: &InstructionData = unsafe { deserialize_unchecked(instruction_data) };
+    show("decimals", &decimals);
+    show("mint_authority", &mint_authority);
+    show("freeze_authority_raw", &freeze_authority);
 
-    show("ix", ix);
-    let InstructionData {
-        decimals,
-        mint_authority,
-        freeze_authority,
-        token_program,
-    } = ix;
+    let freeze_authority = from_c_option(freeze_authority).map(|x| x.to_bytes());
+    show("freeze_authority", &freeze_authority);
+
+    // TODO: deploy "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" (Token-2022) as it doesn't exist in test env
 
     show("invoke", "");
     pinocchio_token_2022::instructions::InitializeMint {
         mint,
         rent_sysvar,
-        decimals: *decimals,
-        mint_authority,
-        freeze_authority: from_pod_c_option(freeze_authority).as_ref(),
-        token_program,
+        decimals,
+        mint_authority: &mint_authority.to_bytes(),
+        freeze_authority: freeze_authority.as_ref(),
+        token_program: &spl_token_2022_interface::ID.to_bytes(),
     }
     .invoke()
 }

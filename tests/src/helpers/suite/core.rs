@@ -398,7 +398,7 @@ pub mod extension {
 
         let transaction = Transaction::new_signed_with_payer(
             instructions,
-            None, // 1st account by default
+            signers.pubkeys().first(),
             signers,
             litesvm.latest_blockhash(),
         );
