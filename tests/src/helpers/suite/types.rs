@@ -284,3 +284,18 @@ pub fn sol_to_pin_pubkey(sol_pubkey: &solana_pubkey::Pubkey) -> pinocchio::pubke
 pub fn pin_to_sol_pubkey(pin_pubkey: &pinocchio::pubkey::Pubkey) -> solana_pubkey::Pubkey {
     solana_pubkey::Pubkey::new_from_array(*pin_pubkey)
 }
+
+pub fn pin_pubkey_to_addr(pubkey: &pinocchio::pubkey::Pubkey) -> solana_address::Address {
+    solana_address::Address::new_from_array(*pubkey)
+}
+
+pub fn addr_to_sol_pubkey(addr: &solana_address::Address) -> solana_pubkey::Pubkey {
+    addr.to_bytes().into()
+}
+
+pub fn option_to_c_option<T>(data: Option<T>) -> solana_program_option::COption<T> {
+    match data {
+        Some(x) => solana_program_option::COption::Some(x),
+        None => solana_program_option::COption::None,
+    }
+}

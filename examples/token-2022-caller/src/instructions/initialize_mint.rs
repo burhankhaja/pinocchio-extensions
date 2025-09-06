@@ -1,5 +1,5 @@
 use {
-    crate::serde::{deserialize, from_pod_c_option},
+    crate::serde::{deserialize, deserialize_unchecked, from_pod_c_option, show},
     bytemuck::{Pod, Zeroable},
     pinocchio::{
         account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey, ProgramResult,
@@ -21,14 +21,21 @@ pub fn initialize_mint(accounts: &[AccountInfo], instruction_data: &[u8]) -> Pro
     let [mint, rent_sysvar] = accounts else {
         Err(ProgramError::InvalidAccountData)?
     };
+    show("mint", mint);
+    show("rent_sysvar", rent_sysvar);
 
+    show("instruction_data", instruction_data);
+    let ix: &InstructionData = unsafe { deserialize_unchecked(instruction_data) };
+
+    show("ix", ix);
     let InstructionData {
         decimals,
         mint_authority,
         freeze_authority,
         token_program,
-    } = deserialize(instruction_data)?;
+    } = ix;
 
+    show("invoke", "");
     pinocchio_token_2022::instructions::InitializeMint {
         mint,
         rent_sysvar,

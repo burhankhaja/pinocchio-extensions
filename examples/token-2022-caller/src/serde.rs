@@ -4,6 +4,7 @@ use {
         checked::{try_from_bytes, try_from_bytes_mut},
         Pod, Zeroable,
     },
+    pinocchio::log::sol_log,
     pinocchio::program_error::ProgramError,
     spl_token_2022_interface::pod::PodCOption,
 };
@@ -62,4 +63,8 @@ where
     } else {
         None
     }
+}
+
+pub fn show<T: core::fmt::Debug>(label: &str, data: T) {
+    sol_log(&format!("✅ {}: {:?}", label, data));
 }

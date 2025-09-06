@@ -5,7 +5,8 @@ use {
             get_token_account_balance, mint_tokens_to_account,
         },
         types::{
-            AppAsset, AppCoin, AppToken, AppUser, GetDecimals, SolPubkey, TestError, TestResult,
+            addr_to_sol_pubkey, AppAsset, AppCoin, AppToken, AppUser, GetDecimals, SolPubkey,
+            TestError, TestResult,
         },
     },
     bytemuck::{checked::try_from_bytes, Pod, Zeroable},
@@ -26,20 +27,21 @@ use {
     strum::IntoEnumIterator,
 };
 
-pub const PROGRAM_NAME_TOKEN: &str = "token";
+pub const PROGRAM_NAME_TOKEN_2022_CALLER: &str = "token_2022_caller";
 
 pub struct ProgramId {
     // standard
     pub system_program: Pubkey,
     pub token_program: Pubkey,
+    pub token_2022_program: Pubkey,
     pub associated_token_program: Pubkey,
 
     // custom
-    pub token: Pubkey,
+    pub token_2022_caller: Pubkey,
 }
 
 pub struct Pda {
-    token_program_id: Pubkey,
+    token_2022_caller_program_id: Pubkey,
 }
 
 #[allow(clippy::useless_vec)]
@@ -49,7 +51,7 @@ impl Pda {
     // pub fn registry_config(&self) -> Pubkey {
     //     get_pda_and_bump(
     //         &seeds![registry_cpi::state::seed::CONFIG],
-    //         &self.token_program_id,
+    //         &self.token_2022_caller_program_id,
     //     )
     //     .0
     // }
@@ -57,7 +59,7 @@ impl Pda {
 
 pub struct App {
     pub litesvm: LiteSVM,
-    is_log_displayed: bool,
+    pub is_log_displayed: bool,
 
     pub program_id: ProgramId,
     pub pda: Pda,
@@ -73,19 +75,24 @@ impl App {
             // standard
             system_program: system_program::ID,
             token_program: spl_token::ID,
+            token_2022_program: addr_to_sol_pubkey(&spl_token_2022_interface::ID),
             associated_token_program: spl_associated_token_account::ID,
 
             // custom
-            token: pinocchio_token::ID.into(),
+            token_2022_caller: token_2022_caller::ID.into(),
         };
 
         // specify PDA
         let pda = Pda {
-            token_program_id: program_id.token,
+            token_2022_caller_program_id: program_id.token_2022_caller,
         };
 
         // upload custom programs
-        upload_program(&mut litesvm, PROGRAM_NAME_TOKEN, &program_id.token);
+        upload_program(
+            &mut litesvm,
+            PROGRAM_NAME_TOKEN_2022_CALLER,
+            &program_id.token_2022_caller,
+        );
 
         Self {
             litesvm,

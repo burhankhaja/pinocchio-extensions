@@ -5197,18 +5197,22 @@ dependencies = [
  "pinocchio-token",
  "pretty_assertions",
  "solana-account",
+ "solana-address",
  "solana-compute-budget",
  "solana-instruction 2.3.0",
  "solana-keypair",
  "solana-message",
  "solana-program",
+ "solana-program-option 3.0.0",
  "solana-pubkey 2.4.0",
  "solana-signer 2.2.1",
  "solana-transaction",
  "spl-associated-token-account",
  "spl-token",
+ "spl-token-2022-interface",
  "strum",
  "strum_macros",
+ "token-2022-caller",
 ]
 
 [[package]]
@@ -5282,6 +5286,7 @@ version = "1.0.0"
 dependencies = [
  "bytemuck",
  "pinocchio",
+ "pinocchio-log-macro",
  "pinocchio-pubkey",
  "pinocchio-token-2022",
  "spl-token-2022-interface",
