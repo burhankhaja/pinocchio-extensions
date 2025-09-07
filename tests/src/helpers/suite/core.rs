@@ -9,21 +9,16 @@ use {
             TestError, TestResult,
         },
     },
-    bytemuck::{checked::try_from_bytes, Pod, Zeroable},
     litesvm::{types::TransactionMetadata, LiteSVM},
-    pinocchio::program_error,
     solana_compute_budget::compute_budget::ComputeBudget,
     solana_instruction::{AccountMeta, Instruction},
     solana_keypair::Keypair,
-    solana_program::{
-        clock::Clock, native_token::LAMPORTS_PER_SOL, program_option::COption, program_pack::Pack,
-        system_instruction, system_program,
-    },
+    solana_program::{clock::Clock, native_token::LAMPORTS_PER_SOL},
     solana_pubkey::Pubkey,
     solana_signer::signers::Signers,
+    solana_system_interface,
     solana_transaction::Transaction,
     spl_associated_token_account::get_associated_token_address,
-    spl_token::state::Mint,
     strum::IntoEnumIterator,
 };
 
@@ -40,19 +35,11 @@ pub struct ProgramId {
     pub token_2022_proxy: Pubkey,
 }
 
-pub struct Pda {
-    token_2022_proxy_program_id: Pubkey,
-}
-
-#[allow(clippy::useless_vec)]
-impl Pda {}
-
 pub struct App {
     pub litesvm: LiteSVM,
     pub is_log_displayed: bool,
 
     pub program_id: ProgramId,
-    pub pda: Pda,
 }
 
 impl App {
@@ -63,18 +50,13 @@ impl App {
         // specify programs
         let program_id = ProgramId {
             // 3rd party
-            system_program: system_program::ID,
+            system_program: addr_to_sol_pubkey(&solana_system_interface::program::ID),
             token_program: spl_token::ID,
             token_2022_program: addr_to_sol_pubkey(&spl_token_2022_interface::ID),
             associated_token_program: spl_associated_token_account::ID,
 
             // custom
             token_2022_proxy: token_2022_proxy::ID.into(),
-        };
-
-        // specify PDA
-        let pda = Pda {
-            token_2022_proxy_program_id: program_id.token_2022_proxy,
         };
 
         // upload custom programs
@@ -89,18 +71,11 @@ impl App {
             is_log_displayed,
 
             program_id,
-            pda,
         }
     }
 
     pub fn new(is_log_displayed: bool) -> Self {
-        let mut app = Self::create_app_with_programs(is_log_displayed);
-        app.create_wsol();
-
-        // prepare programs
-        // ...
-
-        app
+        Self::create_app_with_programs(is_log_displayed)
     }
 
     fn init_env_with_balances() -> LiteSVM {
@@ -165,28 +140,6 @@ impl App {
         litesvm
     }
 
-    fn create_wsol(&mut self) {
-        let mut mint_account = solana_account::Account {
-            lamports: self.litesvm.minimum_balance_for_rent_exemption(Mint::LEN),
-            data: vec![0; Mint::LEN],
-            owner: spl_token::ID,
-            executable: false,
-            rent_epoch: 0,
-        };
-
-        let mut mint_data = spl_token::state::Mint::unpack_unchecked(&mint_account.data).unwrap();
-        mint_data.mint_authority = COption::Some(Pubkey::new_unique());
-        mint_data.decimals = 9;
-        mint_data.supply = 0;
-        mint_data.is_initialized = true;
-        mint_data.freeze_authority = COption::None;
-        mint_data.pack_into_slice(&mut mint_account.data);
-
-        self.litesvm
-            .set_account(AppToken::WSOL.pubkey(), mint_account)
-            .unwrap();
-    }
-
     // utils
 
     pub fn get_clock_time(&self) -> u64 {
@@ -222,9 +175,32 @@ impl App {
     ) -> TestResult<TransactionMetadata> {
         let payer = &sender.pubkey();
         let signers = &[sender.keypair()];
-        let ix = system_instruction::transfer(payer, recipient, amount);
 
-        extension::send_tx(&mut self.litesvm, &[ix], signers, self.is_log_displayed)
+        let ix = solana_system_interface::instruction::transfer(
+            &payer.to_bytes().into(),
+            &recipient.to_bytes().into(),
+            amount,
+        );
+        let ix_legacy = solana_instruction::Instruction {
+            program_id: addr_to_sol_pubkey(&ix.program_id),
+            accounts: ix
+                .accounts
+                .into_iter()
+                .map(|x| solana_instruction::AccountMeta {
+                    pubkey: addr_to_sol_pubkey(&x.pubkey),
+                    is_signer: x.is_signer,
+                    is_writable: x.is_writable,
+                })
+                .collect(),
+            data: ix.data,
+        };
+
+        extension::send_tx(
+            &mut self.litesvm,
+            &[ix_legacy],
+            signers,
+            self.is_log_displayed,
+        )
     }
 
     pub fn transfer_token(
@@ -351,28 +327,7 @@ fn upload_program(litesvm: &mut LiteSVM, program_name: &str, program_id: &Pubkey
 }
 
 pub mod extension {
-    use {super::*, crate::helpers::suite::types::Result};
-
-    fn deserialize<T>(data: &[u8]) -> Result<&T>
-    where
-        T: Pod + Zeroable,
-    {
-        try_from_bytes(data).map_err(|_| program_error::ProgramError::InvalidAccountData)
-    }
-
-    pub fn get_data<T>(litesvm: &LiteSVM, pda: &Pubkey) -> TestResult<T>
-    where
-        T: Pod + Zeroable,
-    {
-        match litesvm.get_account(pda) {
-            Some(account) => {
-                Ok(*deserialize::<T>(&account.data).map_err(TestError::from_raw_error)?)
-            }
-            _ => Err(TestError::from_raw_error(
-                program_error::ProgramError::UninitializedAccount,
-            )),
-        }
-    }
+    use super::*;
 
     pub fn send_tx<S>(
         litesvm: &mut LiteSVM,

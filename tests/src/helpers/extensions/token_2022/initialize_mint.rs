@@ -9,9 +9,9 @@ use {
     litesvm::types::TransactionMetadata,
     pinocchio::pubkey::Pubkey,
     solana_keypair::Keypair,
-    solana_program::system_instruction,
     solana_program_pack::Pack,
     solana_signer::Signer,
+    solana_system_interface::instruction::create_account,
 };
 
 pub trait Token2022InitializeMintExtension {
@@ -89,17 +89,30 @@ impl Token2022InitializeMintExtension for App {
             .get_sysvar::<solana_program::sysvar::rent::Rent>()
             .minimum_balance(account_size);
 
-        let create_account_ix = system_instruction::create_account(
-            &sender.pubkey(),
-            &mint_keypair.pubkey(),
+        let ix = create_account(
+            &sender.pubkey().to_bytes().into(),
+            &mint_keypair.pubkey().to_bytes().into(),
             lamports,
             account_size as u64,
-            &token_2022_program,
+            &token_2022_program.to_bytes().into(),
         );
+        let ix_legacy = solana_instruction::Instruction {
+            program_id: addr_to_sol_pubkey(&ix.program_id),
+            accounts: ix
+                .accounts
+                .into_iter()
+                .map(|x| solana_instruction::AccountMeta {
+                    pubkey: addr_to_sol_pubkey(&x.pubkey),
+                    is_signer: x.is_signer,
+                    is_writable: x.is_writable,
+                })
+                .collect(),
+            data: ix.data,
+        };
 
         let tx_metadata = send_tx(
             &mut self.litesvm,
-            &[create_account_ix],
+            &[ix_legacy],
             signers,
             self.is_log_displayed,
         )?;
@@ -124,7 +137,7 @@ impl Token2022InitializeMintExtension for App {
         let signers = &[sender.keypair()];
 
         let ix = spl_token_2022_interface::instruction::initialize_mint(
-            &pin_pubkey_to_addr(&token_2022_program.to_bytes()),
+            &token_2022_program.to_bytes().into(),
             &pin_pubkey_to_addr(mint),
             &pin_pubkey_to_addr(mint_authority),
             freeze_authority.map(pin_pubkey_to_addr).as_ref(),
