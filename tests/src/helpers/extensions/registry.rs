@@ -8,10 +8,19 @@ use {
     litesvm::types::TransactionMetadata,
     pinocchio::pubkey::Pubkey,
     solana_keypair::Keypair,
+    solana_program::system_instruction,
+    solana_program_pack::Pack,
     solana_signer::Signer,
 };
 
 pub trait TokenExtension {
+    fn token_try_create_mint_account(
+        &mut self,
+        sender: AppUser,
+        mint: Option<Keypair>,
+        extensions: Option<&[spl_token_2022_interface::extension::ExtensionType]>,
+    ) -> TestResult<(TransactionMetadata, Keypair)>;
+
     fn token_try_initialize_mint(
         &mut self,
         sender: AppUser,
@@ -21,16 +30,65 @@ pub trait TokenExtension {
         freeze_authority: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata>;
 
-    fn create_mint_account(
-        &mut self,
-        sender: AppUser,
-        mint: Keypair,
-    ) -> TestResult<TransactionMetadata>;
-
     // fn token_query_config(&self) -> TestResult<Config>;
 }
 
 impl TokenExtension for App {
+    fn token_try_create_mint_account(
+        &mut self,
+        sender: AppUser,
+        mint: Option<Keypair>,
+        extensions: Option<&[spl_token_2022_interface::extension::ExtensionType]>,
+    ) -> TestResult<(TransactionMetadata, Keypair)> {
+        let ProgramId {
+            token_2022_program, ..
+        } = self.program_id;
+
+        // Generate mint keypair if not provided
+        let mint_keypair = mint.unwrap_or(Keypair::new());
+        let signers = &[&sender.keypair(), &mint_keypair];
+
+        // Calculate account size with extensions
+        let account_size = match extensions {
+            Some(x) => {
+                spl_token_2022_interface::extension::ExtensionType::try_calculate_account_len::<
+                    spl_token_2022_interface::state::Mint,
+                >(x)
+                .map_err(|e| {
+                    TestError::from_raw_error(format!(
+                        "Failed to calculate account length: {:?}",
+                        e
+                    ))
+                })?
+            }
+            None => spl_token_2022_interface::state::Mint::LEN,
+        };
+
+        // Get rent exemption amount
+        let lamports = self
+            .litesvm
+            .get_sysvar::<solana_program::sysvar::rent::Rent>()
+            .minimum_balance(account_size);
+
+        // Use system instruction helper instead of manual instruction creation
+        let create_account_ix = system_instruction::create_account(
+            &sender.pubkey(),
+            &mint_keypair.pubkey(),
+            lamports,
+            account_size as u64,
+            &token_2022_program,
+        );
+
+        let tx_metadata = send_tx(
+            &mut self.litesvm,
+            &[create_account_ix],
+            signers,
+            self.is_log_displayed,
+        )?;
+
+        Ok((tx_metadata, mint_keypair))
+    }
+
     fn token_try_initialize_mint(
         &mut self,
         sender: AppUser,
@@ -85,54 +143,6 @@ impl TokenExtension for App {
         send_tx(
             &mut self.litesvm,
             &[ix_legacy],
-            signers,
-            self.is_log_displayed,
-        )
-    }
-
-    // TODO: update create_token_mint to support token-2022
-    fn create_mint_account(
-        &mut self,
-        sender: AppUser,
-        mint: Keypair,
-    ) -> TestResult<TransactionMetadata> {
-        let ProgramId {
-            token_2022_program,
-            system_program,
-            ..
-        } = self.program_id;
-
-        // Token-2022 mint account size (this is larger than Token-1 mint)
-        // Token-2022 mint base size is 82 bytes, but may need extensions
-        const MINT_ACCOUNT_SIZE: u64 = 82;
-
-        // Calculate rent exemption for mint account
-        let rent = self
-            .litesvm
-            .get_sysvar::<solana_program::sysvar::rent::Rent>();
-        let lamports = rent.minimum_balance(MINT_ACCOUNT_SIZE as usize);
-
-        let create_account_ix = solana_instruction::Instruction {
-            program_id: system_program,
-            accounts: vec![
-                solana_instruction::AccountMeta::new(sender.pubkey(), true), // payer
-                solana_instruction::AccountMeta::new(mint.pubkey(), true), // mint account to create
-            ],
-            data: {
-                let mut data = Vec::new();
-                data.extend_from_slice(&0u32.to_le_bytes()); // CreateAccount instruction
-                data.extend_from_slice(&lamports.to_le_bytes()); // lamports
-                data.extend_from_slice(&MINT_ACCOUNT_SIZE.to_le_bytes()); // space
-                data.extend_from_slice(&token_2022_program.to_bytes()); // owner (Token-2022 program)
-                data
-            },
-        };
-
-        let signers = &[sender.keypair(), mint];
-
-        send_tx(
-            &mut self.litesvm,
-            &[create_account_ix],
             signers,
             self.is_log_displayed,
         )

@@ -7,7 +7,6 @@ use {
         },
     },
     pretty_assertions::assert_eq,
-    solana_keypair::Keypair,
     solana_program_option::COption,
     solana_program_pack::Pack,
     solana_signer::Signer,
@@ -19,15 +18,10 @@ fn initialize_mint_default() -> TestResult<()> {
 
     let mut app = App::new(true);
 
-    let mint_keypair = Keypair::from_base58_string(
-        "2TwGtV7qb8wFb9dVuAuSyVUPApxHgzZSCyvPBADcyjkH9fbDtwYjgJ2iCSpfqyYRBTgWmSUH6ZsUDsMrjS2BuDrP",
-    );
-    let mint = mint_keypair.pubkey();
-
-    app.create_mint_account(AppUser::Admin, mint_keypair)?;
+    let (_, mint_keypair) = app.token_try_create_mint_account(AppUser::Admin, None, None)?;
     app.token_try_initialize_mint(
         AppUser::Admin,
-        &mint.to_bytes(),
+        &mint_keypair.pubkey().to_bytes(),
         DECIMALS,
         &AppUser::Alice.pubkey(),
         Some(&AppUser::Bob.pubkey()),
@@ -35,7 +29,7 @@ fn initialize_mint_default() -> TestResult<()> {
 
     let mint_data = app
         .litesvm
-        .get_account(&mint)
+        .get_account(&mint_keypair.pubkey())
         .map(|x| spl_token_2022_interface::state::Mint::unpack_from_slice(&x.data))
         .transpose()
         .map_err(TestError::from_raw_error)?
