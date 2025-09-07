@@ -31,58 +31,6 @@ pub trait TokenExtension {
 }
 
 impl TokenExtension for App {
-    // fn token_try_initialize_mint(
-    //     &mut self,
-    //     sender: AppUser,
-    //     mint: &Pubkey,
-    //     decimals: u8,
-    //     mint_authority: &Pubkey,
-    //     freeze_authority: Option<&Pubkey>,
-    // ) -> TestResult<TransactionMetadata> {
-    //     // programs
-    //     let ProgramId {
-    //         token_2022_program,
-    //         token_2022_caller,
-    //         ..
-    //     } = self.program_id;
-
-    //     // signers
-    //     let signers = &[sender.keypair()];
-
-    //     // instruction builder checks program_id, token_2022_program must be specified here
-    //     let ix = spl_token_2022_interface::instruction::initialize_mint(
-    //         &pin_pubkey_to_addr(&token_2022_program.to_bytes()),
-    //         &pin_pubkey_to_addr(&mint),
-    //         &pin_pubkey_to_addr(&mint_authority),
-    //         freeze_authority.map(pin_pubkey_to_addr).as_ref(),
-    //         decimals,
-    //     )
-    //     .map_err(TestError::from_raw_error)?;
-
-    //     // convert Instruction v3.0.0 to Instruction v2.3.0
-    //     // program_id should be replaced now: token_2022_program -> token_2022_caller
-    //     let ix_legacy = solana_instruction::Instruction {
-    //         program_id: token_2022_caller,
-    //         accounts: ix
-    //             .accounts
-    //             .iter()
-    //             .map(|x| solana_instruction::AccountMeta {
-    //                 pubkey: addr_to_sol_pubkey(&x.pubkey),
-    //                 is_signer: x.is_signer,
-    //                 is_writable: x.is_writable,
-    //             })
-    //             .collect(),
-    //         data: ix.data,
-    //     };
-
-    //     send_tx(
-    //         &mut self.litesvm,
-    //         &[ix_legacy],
-    //         signers,
-    //         self.is_log_displayed,
-    //     )
-    // }
-
     fn token_try_initialize_mint(
         &mut self,
         sender: AppUser,
@@ -101,33 +49,37 @@ impl TokenExtension for App {
         // signers
         let signers = &[sender.keypair()];
 
-        // Create the instruction manually to ensure we have all required accounts
-        let accounts = vec![
-            solana_instruction::AccountMeta::new(Pubkey::from(*mint).into(), false), // mint (writable)
-            solana_instruction::AccountMeta::new_readonly(solana_program::sysvar::rent::ID, false), // rent sysvar
-            solana_instruction::AccountMeta::new_readonly(token_2022_program, false), // token program
-        ];
+        // instruction builder checks program_id, token_2022_program must be specified here
+        let ix = spl_token_2022_interface::instruction::initialize_mint(
+            &pin_pubkey_to_addr(&token_2022_program.to_bytes()),
+            &pin_pubkey_to_addr(mint),
+            &pin_pubkey_to_addr(mint_authority),
+            freeze_authority.map(pin_pubkey_to_addr).as_ref(),
+            decimals,
+        )
+        .map_err(TestError::from_raw_error)?;
 
-        // Create instruction data manually
-        let mut instruction_data = vec![0u8]; // InitializeMint discriminator
-        instruction_data.push(decimals);
-        instruction_data.extend_from_slice(mint_authority);
+        // required by runtime to validate programs
+        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
+            token_2022_program,
+            false,
+        )];
 
-        // Handle freeze_authority (COption<Pubkey>)
-        match freeze_authority {
-            Some(authority) => {
-                instruction_data.push(1); // Some variant
-                instruction_data.extend_from_slice(authority);
-            }
-            None => {
-                instruction_data.push(0); // None variant
-            }
-        }
-
+        // convert Instruction v3.0.0 to Instruction v2.3.0
+        // program_id should be replaced now: token_2022_program -> token_2022_caller
         let ix_legacy = solana_instruction::Instruction {
             program_id: token_2022_caller,
-            accounts,
-            data: instruction_data,
+            accounts: ix
+                .accounts
+                .into_iter()
+                .map(|x| solana_instruction::AccountMeta {
+                    pubkey: addr_to_sol_pubkey(&x.pubkey),
+                    is_signer: x.is_signer,
+                    is_writable: x.is_writable,
+                })
+                .chain(additional_accounts.into_iter())
+                .collect(),
+            data: ix.data,
         };
 
         send_tx(
@@ -138,6 +90,7 @@ impl TokenExtension for App {
         )
     }
 
+    // TODO: update create_token_mint to support token-2022
     fn create_mint_account(
         &mut self,
         sender: AppUser,
