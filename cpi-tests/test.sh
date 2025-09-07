@@ -2,9 +2,9 @@
 # 2. build and test:                        ./test.sh
 
 (
-    clear && cd ..
+    clear
 
-    for program in examples/*/; do
+    for program in programs/*/; do
         if [ -d "$program" ]; then
             echo "Building $(basename "$program")..."
             cd "$program" && cargo build-sbf && cd - > /dev/null
@@ -13,7 +13,7 @@
 )
 
 if [[ "$1" == "s" ]]; then
-    (clear && cargo test -- --show-output)
+    (cd tests && clear && cargo test -- --show-output)
 else
-    (clear && cargo test)
+    (cd tests && clear && cargo test)
 fi

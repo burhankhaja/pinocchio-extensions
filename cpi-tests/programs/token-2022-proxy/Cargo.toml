@@ -18,6 +18,6 @@ pinocchio = { workspace = true }
 pinocchio-log-macro = { workspace = true }
 pinocchio-pubkey = { workspace = true }
 pinocchio-token-2022 = { workspace = true }
-spl-token-2022-interface = { workspace = true }
-solana-program-option = { workspace = true }
-solana-address = { workspace = true }
+spl-token-2022-interface = "2.0.0"
+solana-program-option = "3.0.0"
+solana-address = "1.0.0"

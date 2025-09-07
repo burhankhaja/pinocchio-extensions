@@ -222,20 +222,12 @@ pub fn get_program_size(program_name: &str) -> TestResult<u64> {
 }
 
 fn get_program_path(program_name: &str) -> String {
-    const PROGRAM_PATH: &str = "../target/deploy/";
+    const PROGRAM_PATH: &str = "../../target/deploy/";
     format!("{}{}.so", PROGRAM_PATH, program_name)
 }
 
-fn get_dumps_path(program_name: &str) -> String {
-    const DUMPS_PATH: &str = "./src/helpers/dumps/";
-    format!("{}{}.so", DUMPS_PATH, program_name)
-}
-
 fn upload_program(litesvm: &mut LiteSVM, program_name: &str, program_id: &Pubkey) {
-    // try to deploy custom programs first, if it doesn't work then deploy dumps
-    if deploy_program(litesvm, program_id, &get_program_path(program_name)).is_err() {
-        deploy_program(litesvm, program_id, &get_dumps_path(program_name)).unwrap()
-    }
+    deploy_program(litesvm, program_id, &get_program_path(program_name)).unwrap()
 }
 
 pub mod extension {
