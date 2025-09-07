@@ -13,7 +13,7 @@ use {
     solana_compute_budget::compute_budget::ComputeBudget,
     solana_instruction::{AccountMeta, Instruction},
     solana_keypair::Keypair,
-    solana_program::{clock::Clock, native_token::LAMPORTS_PER_SOL},
+    solana_program::native_token::LAMPORTS_PER_SOL,
     solana_pubkey::Pubkey,
     solana_signer::signers::Signers,
     solana_system_interface,
@@ -141,94 +141,6 @@ impl App {
     }
 
     // utils
-
-    pub fn get_clock_time(&self) -> u64 {
-        self.litesvm.get_sysvar::<Clock>().unix_timestamp as u64
-    }
-
-    pub fn wait(&mut self, delay_s: u64) {
-        let mut clock = self.litesvm.get_sysvar::<Clock>();
-        clock.unix_timestamp += delay_s as i64;
-        clock.slot += 25 * delay_s / 10;
-
-        self.litesvm.set_sysvar::<Clock>(&clock);
-    }
-
-    pub fn transfer_asset(
-        &mut self,
-        sender: AppUser,
-        recipient: &Pubkey,
-        amount: u64,
-        asset: impl Into<AppAsset>,
-    ) -> TestResult<TransactionMetadata> {
-        match asset.into() {
-            AppAsset::Coin(_) => self.transfer_sol(sender, recipient, amount),
-            AppAsset::Token(mint) => self.transfer_token(sender, recipient, amount, mint),
-        }
-    }
-
-    pub fn transfer_sol(
-        &mut self,
-        sender: AppUser,
-        recipient: &Pubkey,
-        amount: u64,
-    ) -> TestResult<TransactionMetadata> {
-        let payer = &sender.pubkey();
-        let signers = &[sender.keypair()];
-
-        let ix = solana_system_interface::instruction::transfer(
-            &payer.to_bytes().into(),
-            &recipient.to_bytes().into(),
-            amount,
-        );
-        let ix_legacy = solana_instruction::Instruction {
-            program_id: addr_to_sol_pubkey(&ix.program_id),
-            accounts: ix
-                .accounts
-                .into_iter()
-                .map(|x| solana_instruction::AccountMeta {
-                    pubkey: addr_to_sol_pubkey(&x.pubkey),
-                    is_signer: x.is_signer,
-                    is_writable: x.is_writable,
-                })
-                .collect(),
-            data: ix.data,
-        };
-
-        extension::send_tx(
-            &mut self.litesvm,
-            &[ix_legacy],
-            signers,
-            self.is_log_displayed,
-        )
-    }
-
-    pub fn transfer_token(
-        &mut self,
-        sender: AppUser,
-        recipient: &Pubkey,
-        amount: u64,
-        token: AppToken,
-    ) -> TestResult<TransactionMetadata> {
-        let payer = sender.pubkey();
-        let signers = &[sender.keypair()];
-
-        let mint = token.pubkey();
-        let sender_ata = self.get_or_create_ata(sender, &sender.pubkey(), &mint)?;
-        let recipient_ata = self.get_or_create_ata(sender, recipient, &mint)?;
-
-        let ix = spl_token::instruction::transfer(
-            &self.program_id.token_program,
-            &sender_ata,
-            &recipient_ata,
-            &payer,
-            &[&payer],
-            amount,
-        )
-        .map_err(TestError::from_unknown)?;
-
-        extension::send_tx(&mut self.litesvm, &[ix], signers, self.is_log_displayed)
-    }
 
     pub fn get_balance(&self, user: AppUser, asset: impl Into<AppAsset>) -> u64 {
         let address = &user.pubkey();
