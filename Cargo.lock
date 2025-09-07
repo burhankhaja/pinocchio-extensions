@@ -5195,6 +5195,7 @@ dependencies = [
  "pinocchio",
  "pinocchio-pubkey",
  "pinocchio-token",
+ "pinocchio-token-2022",
  "pretty_assertions",
  "solana-account",
  "solana-address",

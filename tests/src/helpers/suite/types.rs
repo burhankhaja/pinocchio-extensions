@@ -1,5 +1,6 @@
 use {
     solana_keypair::Keypair,
+    solana_program_option::COption,
     std::fmt::Debug,
     strum::IntoEnumIterator,
     strum_macros::{Display, EnumIter, IntoStaticStr},
@@ -293,9 +294,9 @@ pub fn addr_to_sol_pubkey(addr: &solana_address::Address) -> solana_pubkey::Pubk
     addr.to_bytes().into()
 }
 
-pub fn option_to_c_option<T>(data: Option<T>) -> solana_program_option::COption<T> {
+pub fn to_c_option<T>(data: Option<T>) -> COption<T> {
     match data {
-        Some(x) => solana_program_option::COption::Some(x),
-        None => solana_program_option::COption::None,
+        Some(x) => COption::Some(x),
+        None => COption::None,
     }
 }

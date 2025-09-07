@@ -2,8 +2,8 @@ use {
     crate::helpers::suite::{
         core::{extension::send_tx, App, ProgramId},
         types::{
-            addr_to_sol_pubkey, pin_pubkey_to_addr, pin_to_sol_pubkey, AppUser, SolPubkey,
-            TestError, TestResult,
+            addr_to_sol_pubkey, pin_pubkey_to_addr, pin_to_sol_pubkey, to_c_option, AppUser,
+            SolPubkey, TestError, TestResult,
         },
     },
     litesvm::types::TransactionMetadata,
@@ -22,7 +22,7 @@ pub trait TokenExtension {
         extensions: Option<&[spl_token_2022_interface::extension::ExtensionType]>,
     ) -> TestResult<(TransactionMetadata, Keypair)>;
 
-    /// call token-2022 directly
+    /// execute token-2022 instruction directly
     fn token_2022_try_initialize_mint(
         &mut self,
         sender: AppUser,
@@ -32,7 +32,7 @@ pub trait TokenExtension {
         freeze_authority: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata>;
 
-    // call token-2022 using proxy program
+    /// execute token-2022 instruction using proxy program
     fn token_2022_proxy_try_initialize_mint(
         &mut self,
         sender: AppUser,
@@ -42,7 +42,14 @@ pub trait TokenExtension {
         freeze_authority: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata>;
 
+    /// read token-2022 state using spl interface
     fn token_2022_query_mint_state(
+        &self,
+        mint: &Pubkey,
+    ) -> TestResult<spl_token_2022_interface::state::Mint>;
+
+    /// read token-2022 state using pinocchio interface
+    fn token_2022_proxy_query_mint_state(
         &self,
         mint: &Pubkey,
     ) -> TestResult<spl_token_2022_interface::state::Mint>;
@@ -220,6 +227,27 @@ impl TokenExtension for App {
             .map(|x| spl_token_2022_interface::state::Mint::unpack_from_slice(&x.data))
             .transpose()
             .map_err(TestError::from_raw_error)?
-            .ok_or(TestError::from_raw_error("mint data is not found"))
+            .ok_or(TestError::from_raw_error("The state isn't found"))
+    }
+
+    fn token_2022_proxy_query_mint_state(
+        &self,
+        mint: &Pubkey,
+    ) -> TestResult<spl_token_2022_interface::state::Mint> {
+        let data = &self
+            .litesvm
+            .get_account(&pin_to_sol_pubkey(mint))
+            .map(|x| x.data)
+            .ok_or(TestError::from_raw_error("The state isn't found"))?;
+
+        let state = unsafe { pinocchio_token_2022::state::Mint::from_bytes_unchecked(data) };
+
+        Ok(spl_token_2022_interface::state::Mint {
+            mint_authority: to_c_option(state.mint_authority().map(pin_pubkey_to_addr)),
+            supply: state.supply(),
+            decimals: state.decimals(),
+            is_initialized: state.is_initialized(),
+            freeze_authority: to_c_option(state.freeze_authority().map(pin_pubkey_to_addr)),
+        })
     }
 }
