@@ -3,40 +3,64 @@ use {
         extensions::registry::TokenExtension,
         suite::{
             core::App,
-            types::{AppUser, PinPubkey, TestError, TestResult},
+            types::{AppUser, PinPubkey, TestResult},
         },
     },
     pretty_assertions::assert_eq,
     solana_program_option::COption,
-    solana_program_pack::Pack,
     solana_signer::Signer,
 };
 
 #[test]
-fn initialize_mint_default() -> TestResult<()> {
+fn initialize_mint_directly_default() -> TestResult<()> {
     const DECIMALS: u8 = 6;
 
-    let mut app = App::new(true);
+    let mut app = App::new(false);
 
-    let (_, mint_keypair) = app.token_try_create_mint_account(AppUser::Admin, None, None)?;
-    app.token_try_initialize_mint(
+    let (_, mint_keypair) = app.token_2022_try_create_mint_account(AppUser::Admin, None, None)?;
+    let mint = &mint_keypair.pubkey().to_bytes();
+
+    app.token_2022_try_initialize_mint(
         AppUser::Admin,
-        &mint_keypair.pubkey().to_bytes(),
+        mint,
         DECIMALS,
         &AppUser::Alice.pubkey(),
         Some(&AppUser::Bob.pubkey()),
     )?;
 
-    let mint_data = app
-        .litesvm
-        .get_account(&mint_keypair.pubkey())
-        .map(|x| spl_token_2022_interface::state::Mint::unpack_from_slice(&x.data))
-        .transpose()
-        .map_err(TestError::from_raw_error)?
-        .ok_or(TestError::from_raw_error("mint data is not found"))?;
+    assert_eq!(
+        app.token_2022_query_mint_state(mint)?,
+        spl_token_2022_interface::state::Mint {
+            mint_authority: COption::Some(AppUser::Alice.pubkey().into()),
+            supply: 0,
+            decimals: DECIMALS,
+            is_initialized: true,
+            freeze_authority: COption::Some(AppUser::Bob.pubkey().into())
+        }
+    );
+
+    Ok(())
+}
+
+#[test]
+fn initialize_mint_default() -> TestResult<()> {
+    const DECIMALS: u8 = 6;
+
+    let mut app = App::new(false);
+
+    let (_, mint_keypair) = app.token_2022_try_create_mint_account(AppUser::Admin, None, None)?;
+    let mint = &mint_keypair.pubkey().to_bytes();
+
+    app.token_2022_proxy_try_initialize_mint(
+        AppUser::Admin,
+        mint,
+        DECIMALS,
+        &AppUser::Alice.pubkey(),
+        Some(&AppUser::Bob.pubkey()),
+    )?;
 
     assert_eq!(
-        mint_data,
+        app.token_2022_query_mint_state(mint)?,
         spl_token_2022_interface::state::Mint {
             mint_authority: COption::Some(AppUser::Alice.pubkey().into()),
             supply: 0,

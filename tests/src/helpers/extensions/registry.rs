@@ -2,7 +2,8 @@ use {
     crate::helpers::suite::{
         core::{extension::send_tx, App, ProgramId},
         types::{
-            addr_to_sol_pubkey, pin_pubkey_to_addr, AppUser, SolPubkey, TestError, TestResult,
+            addr_to_sol_pubkey, pin_pubkey_to_addr, pin_to_sol_pubkey, AppUser, SolPubkey,
+            TestError, TestResult,
         },
     },
     litesvm::types::TransactionMetadata,
@@ -14,14 +15,15 @@ use {
 };
 
 pub trait TokenExtension {
-    fn token_try_create_mint_account(
+    fn token_2022_try_create_mint_account(
         &mut self,
         sender: AppUser,
         mint: Option<Keypair>,
         extensions: Option<&[spl_token_2022_interface::extension::ExtensionType]>,
     ) -> TestResult<(TransactionMetadata, Keypair)>;
 
-    fn token_try_initialize_mint(
+    /// call token-2022 directly
+    fn token_2022_try_initialize_mint(
         &mut self,
         sender: AppUser,
         mint: &Pubkey,
@@ -30,11 +32,24 @@ pub trait TokenExtension {
         freeze_authority: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata>;
 
-    // fn token_query_config(&self) -> TestResult<Config>;
+    // call token-2022 using proxy program
+    fn token_2022_proxy_try_initialize_mint(
+        &mut self,
+        sender: AppUser,
+        mint: &Pubkey,
+        decimals: u8,
+        mint_authority: &Pubkey,
+        freeze_authority: Option<&Pubkey>,
+    ) -> TestResult<TransactionMetadata>;
+
+    fn token_2022_query_mint_state(
+        &self,
+        mint: &Pubkey,
+    ) -> TestResult<spl_token_2022_interface::state::Mint>;
 }
 
 impl TokenExtension for App {
-    fn token_try_create_mint_account(
+    fn token_2022_try_create_mint_account(
         &mut self,
         sender: AppUser,
         mint: Option<Keypair>,
@@ -89,7 +104,55 @@ impl TokenExtension for App {
         Ok((tx_metadata, mint_keypair))
     }
 
-    fn token_try_initialize_mint(
+    fn token_2022_try_initialize_mint(
+        &mut self,
+        sender: AppUser,
+        mint: &Pubkey,
+        decimals: u8,
+        mint_authority: &Pubkey,
+        freeze_authority: Option<&Pubkey>,
+    ) -> TestResult<TransactionMetadata> {
+        // programs
+        let ProgramId {
+            token_2022_program, ..
+        } = self.program_id;
+
+        // signers
+        let signers = &[sender.keypair()];
+
+        let ix = spl_token_2022_interface::instruction::initialize_mint(
+            &pin_pubkey_to_addr(&token_2022_program.to_bytes()),
+            &pin_pubkey_to_addr(mint),
+            &pin_pubkey_to_addr(mint_authority),
+            freeze_authority.map(pin_pubkey_to_addr).as_ref(),
+            decimals,
+        )
+        .map_err(TestError::from_raw_error)?;
+
+        // convert Instruction v3.0.0 to Instruction v2.3.0
+        let ix_legacy = solana_instruction::Instruction {
+            program_id: addr_to_sol_pubkey(&ix.program_id),
+            accounts: ix
+                .accounts
+                .into_iter()
+                .map(|x| solana_instruction::AccountMeta {
+                    pubkey: addr_to_sol_pubkey(&x.pubkey),
+                    is_signer: x.is_signer,
+                    is_writable: x.is_writable,
+                })
+                .collect(),
+            data: ix.data,
+        };
+
+        send_tx(
+            &mut self.litesvm,
+            &[ix_legacy],
+            signers,
+            self.is_log_displayed,
+        )
+    }
+
+    fn token_2022_proxy_try_initialize_mint(
         &mut self,
         sender: AppUser,
         mint: &Pubkey,
@@ -148,7 +211,15 @@ impl TokenExtension for App {
         )
     }
 
-    // fn token_query_config(&self) -> TestResult<Config> {
-    //     get_data(&self.litesvm, &self.pda.token_config())
-    // }
+    fn token_2022_query_mint_state(
+        &self,
+        mint: &Pubkey,
+    ) -> TestResult<spl_token_2022_interface::state::Mint> {
+        self.litesvm
+            .get_account(&pin_to_sol_pubkey(mint))
+            .map(|x| spl_token_2022_interface::state::Mint::unpack_from_slice(&x.data))
+            .transpose()
+            .map_err(TestError::from_raw_error)?
+            .ok_or(TestError::from_raw_error("mint data is not found"))
+    }
 }
