@@ -14,7 +14,7 @@ use {
     solana_signer::Signer,
 };
 
-pub trait TokenExtension {
+pub trait Token2022InitializeMintExtension {
     fn token_2022_try_create_mint_account(
         &mut self,
         sender: AppUser,
@@ -55,7 +55,7 @@ pub trait TokenExtension {
     ) -> TestResult<spl_token_2022_interface::state::Mint>;
 }
 
-impl TokenExtension for App {
+impl Token2022InitializeMintExtension for App {
     fn token_2022_try_create_mint_account(
         &mut self,
         sender: AppUser,
@@ -66,11 +66,9 @@ impl TokenExtension for App {
             token_2022_program, ..
         } = self.program_id;
 
-        // Generate mint keypair if not provided
         let mint_keypair = mint.unwrap_or(Keypair::new());
         let signers = &[&sender.keypair(), &mint_keypair];
 
-        // Calculate account size with extensions
         let account_size = match extensions {
             Some(x) => {
                 spl_token_2022_interface::extension::ExtensionType::try_calculate_account_len::<
@@ -86,13 +84,11 @@ impl TokenExtension for App {
             None => spl_token_2022_interface::state::Mint::LEN,
         };
 
-        // Get rent exemption amount
         let lamports = self
             .litesvm
             .get_sysvar::<solana_program::sysvar::rent::Rent>()
             .minimum_balance(account_size);
 
-        // Use system instruction helper instead of manual instruction creation
         let create_account_ix = system_instruction::create_account(
             &sender.pubkey(),
             &mint_keypair.pubkey(),
@@ -170,7 +166,7 @@ impl TokenExtension for App {
         // programs
         let ProgramId {
             token_2022_program,
-            token_2022_caller,
+            token_2022_proxy,
             ..
         } = self.program_id;
 
@@ -194,9 +190,9 @@ impl TokenExtension for App {
         )];
 
         // convert Instruction v3.0.0 to Instruction v2.3.0
-        // program_id should be replaced now: token_2022_program -> token_2022_caller
+        // program_id should be replaced now: token_2022_program -> token_2022_proxy
         let ix_legacy = solana_instruction::Instruction {
-            program_id: token_2022_caller,
+            program_id: token_2022_proxy,
             accounts: ix
                 .accounts
                 .into_iter()

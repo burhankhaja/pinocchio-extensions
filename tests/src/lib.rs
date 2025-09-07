@@ -1,9 +1,11 @@
 #[cfg(test)]
-pub mod registry;
+pub mod initialize_mint;
 
 pub mod helpers {
     pub mod extensions {
-        pub mod registry;
+        pub mod token_2022 {
+            pub mod initialize_mint;
+        }
     }
 
     pub mod suite {

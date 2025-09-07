@@ -1,5 +1,5 @@
 [package]
-name = "token-2022-caller"
+name = "token-2022-proxy"
 version = "1.0.0"
 description = "A program to test Token-2022 Pinocchio CPI"
 repository = { workspace = true }

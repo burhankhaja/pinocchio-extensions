@@ -36,8 +36,8 @@ spl-token-2022-interface = "2.0.0"
 pinocchio-token = { path = "./programs/token" }
 pinocchio-token-2022 = { path = "./programs/token-2022" }
 
-# cpi callers
-token-2022-caller = { path = "./examples/token-2022-caller" }
+# cpi consumers
+token-2022-proxy = { path = "./examples/token-2022-proxy" }
 
 # test dependencies
 strum = "0.24.1"

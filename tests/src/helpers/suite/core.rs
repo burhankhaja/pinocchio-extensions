@@ -27,35 +27,25 @@ use {
     strum::IntoEnumIterator,
 };
 
-pub const PROGRAM_NAME_TOKEN_2022_CALLER: &str = "token_2022_caller";
+pub const PROGRAM_NAME_TOKEN_2022_PROXY: &str = "token_2022_proxy";
 
 pub struct ProgramId {
-    // standard
+    // 3rd party
     pub system_program: Pubkey,
     pub token_program: Pubkey,
     pub token_2022_program: Pubkey,
     pub associated_token_program: Pubkey,
 
     // custom
-    pub token_2022_caller: Pubkey,
+    pub token_2022_proxy: Pubkey,
 }
 
 pub struct Pda {
-    token_2022_caller_program_id: Pubkey,
+    token_2022_proxy_program_id: Pubkey,
 }
 
 #[allow(clippy::useless_vec)]
-impl Pda {
-    // token
-    //
-    // pub fn registry_config(&self) -> Pubkey {
-    //     get_pda_and_bump(
-    //         &seeds![registry_cpi::state::seed::CONFIG],
-    //         &self.token_2022_caller_program_id,
-    //     )
-    //     .0
-    // }
-}
+impl Pda {}
 
 pub struct App {
     pub litesvm: LiteSVM,
@@ -72,26 +62,26 @@ impl App {
 
         // specify programs
         let program_id = ProgramId {
-            // standard
+            // 3rd party
             system_program: system_program::ID,
             token_program: spl_token::ID,
             token_2022_program: addr_to_sol_pubkey(&spl_token_2022_interface::ID),
             associated_token_program: spl_associated_token_account::ID,
 
             // custom
-            token_2022_caller: token_2022_caller::ID.into(),
+            token_2022_proxy: token_2022_proxy::ID.into(),
         };
 
         // specify PDA
         let pda = Pda {
-            token_2022_caller_program_id: program_id.token_2022_caller,
+            token_2022_proxy_program_id: program_id.token_2022_proxy,
         };
 
         // upload custom programs
         upload_program(
             &mut litesvm,
-            PROGRAM_NAME_TOKEN_2022_CALLER,
-            &program_id.token_2022_caller,
+            PROGRAM_NAME_TOKEN_2022_PROXY,
+            &program_id.token_2022_proxy,
         );
 
         Self {

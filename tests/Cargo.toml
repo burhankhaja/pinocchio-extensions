@@ -20,15 +20,15 @@ pinocchio = { workspace = true }
 pinocchio-pubkey = { workspace = true }
 # pinocchio-log = { workspace = true }
 
-# programs
-pinocchio-token = { workspace = true }
-# pinocchio-system = { workspace = true }
-# pinocchio-associated-token-account = { workspace = true }
-
-pinocchio-token-2022 = { workspace = true }
+# spl cpi
 spl-token-2022-interface = { workspace = true }
 
-token-2022-caller = { workspace = true }
+# pinocchio cpi
+pinocchio-token = { workspace = true }
+pinocchio-token-2022 = { workspace = true }
+
+# cpi consumers
+token-2022-proxy = { workspace = true }
 
 # for tests
 strum = { workspace = true }

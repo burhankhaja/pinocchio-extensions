@@ -5214,7 +5214,7 @@ dependencies = [
  "spl-token-2022-interface",
  "strum",
  "strum_macros",
- "token-2022-caller",
+ "token-2022-proxy",
 ]
 
 [[package]]
@@ -5283,7 +5283,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
-name = "token-2022-caller"
+name = "token-2022-proxy"
 version = "1.0.0"
 dependencies = [
  "pinocchio",

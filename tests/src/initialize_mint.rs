@@ -1,6 +1,6 @@
 use {
     crate::helpers::{
-        extensions::registry::TokenExtension,
+        extensions::token_2022::initialize_mint::Token2022InitializeMintExtension,
         suite::{
             core::App,
             types::{pin_pubkey_to_addr, to_c_option, AppUser, PinPubkey, TestResult},
