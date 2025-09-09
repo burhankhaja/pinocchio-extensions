@@ -15,7 +15,7 @@ use {
     solana_keypair::Keypair,
     solana_program::native_token::LAMPORTS_PER_SOL,
     solana_pubkey::Pubkey,
-    solana_signer::signers::Signers,
+    solana_signer::{signers::Signers, Signer},
     solana_system_interface,
     solana_transaction::Transaction,
     spl_associated_token_account::get_associated_token_address,
@@ -192,6 +192,53 @@ impl App {
     ) -> TestResult<Pubkey> {
         create_associated_token_account(litesvm, owner, mint, sender)
             .map_err(TestError::from_unknown)
+    }
+
+    pub fn create_account(
+        &mut self,
+        sender: AppUser,
+        new_account: Option<Keypair>,
+        space: usize,
+        owner: &Pubkey,
+    ) -> TestResult<(TransactionMetadata, Keypair)> {
+        let account_keypair = new_account.unwrap_or(Keypair::new());
+        let signers = &[&sender.keypair(), &account_keypair];
+
+        let lamports = self
+            .litesvm
+            .get_sysvar::<solana_program::sysvar::rent::Rent>()
+            .minimum_balance(space);
+
+        let ix = solana_system_interface::instruction::create_account(
+            &sender.pubkey().to_bytes().into(),
+            &account_keypair.pubkey().to_bytes().into(),
+            lamports,
+            space as u64,
+            &owner.to_bytes().into(),
+        );
+
+        let ix_legacy = solana_instruction::Instruction {
+            program_id: addr_to_sol_pubkey(&ix.program_id),
+            accounts: ix
+                .accounts
+                .into_iter()
+                .map(|x| solana_instruction::AccountMeta {
+                    pubkey: addr_to_sol_pubkey(&x.pubkey),
+                    is_signer: x.is_signer,
+                    is_writable: x.is_writable,
+                })
+                .collect(),
+            data: ix.data,
+        };
+
+        let tx_metadata = extension::send_tx(
+            &mut self.litesvm,
+            &[ix_legacy],
+            signers,
+            self.is_log_displayed,
+        )?;
+
+        Ok((tx_metadata, account_keypair))
     }
 }
 
