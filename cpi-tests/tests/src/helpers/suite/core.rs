@@ -142,6 +142,42 @@ impl App {
 
     // utils
 
+    pub fn transfer_sol(
+        &mut self,
+        sender: AppUser,
+        recipient: &Pubkey,
+        amount: u64,
+    ) -> TestResult<TransactionMetadata> {
+        let payer = &sender.pubkey();
+        let signers = &[sender.keypair()];
+        let ix = solana_system_interface::instruction::transfer(
+            &payer.to_bytes().into(),
+            &recipient.to_bytes().into(),
+            amount,
+        );
+
+        let ix_legacy = solana_instruction::Instruction {
+            program_id: addr_to_sol_pubkey(&ix.program_id),
+            accounts: ix
+                .accounts
+                .into_iter()
+                .map(|x| solana_instruction::AccountMeta {
+                    pubkey: addr_to_sol_pubkey(&x.pubkey),
+                    is_signer: x.is_signer,
+                    is_writable: x.is_writable,
+                })
+                .collect(),
+            data: ix.data,
+        };
+
+        extension::send_tx(
+            &mut self.litesvm,
+            &[ix_legacy],
+            signers,
+            self.is_log_displayed,
+        )
+    }
+
     pub fn get_balance(&self, user: AppUser, asset: impl Into<AppAsset>) -> u64 {
         let address = &user.pubkey();
 
