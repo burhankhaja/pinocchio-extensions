@@ -5209,6 +5209,7 @@ dependencies = [
 name = "tests"
 version = "1.0.0"
 dependencies = [
+ "bytemuck",
  "litesvm",
  "pinocchio",
  "pinocchio-pubkey",
@@ -5232,6 +5233,7 @@ dependencies = [
  "spl-pod 0.7.1",
  "spl-token",
  "spl-token-2022-interface",
+ "spl-token-group-interface 0.7.1",
  "spl-token-metadata-interface 0.8.0",
  "strum",
  "strum_macros",
