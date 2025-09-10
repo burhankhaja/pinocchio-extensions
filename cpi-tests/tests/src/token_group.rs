@@ -120,23 +120,23 @@ fn proxy_initialize_group_pointer_with_token_group() -> TestResult<()> {
         freeze_authority.as_ref(),
     )?;
 
-    // app.token_2022_try_initialize_token_group(
-    //     AppUser::Admin,
-    //     mint_pubkey,
-    //     mint_pubkey,
-    //     mint_authority,
-    //     Some(&update_authority.to_bytes()),
-    //     max_size,
-    // )?;
+    app.token_2022_try_initialize_token_group(
+        AppUser::Admin,
+        mint_pubkey,
+        mint_pubkey,
+        mint_authority,
+        Some(&update_authority.to_bytes()),
+        max_size,
+    )?;
 
     assert_eq!(
         app.token_2022_query_group_pointer_state(mint_pubkey)?,
         group_pointer
     );
-    // assert_eq!(
-    //     app.token_2022_query_token_group_state(mint_pubkey)?,
-    //     token_group
-    // );
+    assert_eq!(
+        app.token_2022_query_token_group_state(mint_pubkey)?,
+        token_group
+    );
 
     Ok(())
 }

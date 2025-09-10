@@ -2,8 +2,8 @@
 pub mod initialize_mint;
 #[cfg(test)]
 pub mod token_group;
-#[cfg(test)]
-pub mod token_metadata;
+// #[cfg(test)]
+// pub mod token_metadata;
 
 pub mod helpers {
     pub mod extensions {

@@ -1,12 +1,8 @@
 use {
-    crate::{
-        instructions::extension::group_pointer::{
-            offset_group_pointer_initialize as OFFSET, ExtensionDiscriminator,
-            InstructionDiscriminatorGroupPointer,
-        },
-        option_to_flag, write_bytes, UNINIT_BYTE,
+    crate::instructions::extension::group_pointer::{
+        offset_group_pointer_initialize as OFFSET, ExtensionDiscriminator,
+        InstructionDiscriminatorGroupPointer,
     },
-    core::slice::from_raw_parts,
     pinocchio::{
         account_info::AccountInfo,
         cpi::invoke_signed,
@@ -42,7 +38,8 @@ impl Initialize<'_> {
     pub fn invoke_signed(&self, signers: &[Signer]) -> ProgramResult {
         let account_metas = [AccountMeta::writable(self.mint.key())];
 
-        let data = initialize_instruction_data(self.authority, self.group_address);
+        let mut buffer = [0u8; OFFSET::MAX as usize];
+        let data = initialize_instruction_data(&mut buffer, self.authority, self.group_address);
 
         let instruction = Instruction {
             program_id: self.token_program,
@@ -55,55 +52,29 @@ impl Initialize<'_> {
 }
 
 pub fn initialize_instruction_data<'a>(
+    buffer: &'a mut [u8],
     authority: Option<&'a Pubkey>,
     group_address: Option<&'a Pubkey>,
 ) -> &'a [u8] {
-    // Size depends on presence of authority and group_address
-    let mut instruction_data = [UNINIT_BYTE; OFFSET::MAX as usize];
-
-    // === Set discriminators ===
-    write_bytes(
-        &mut instruction_data,
-        &[
-            ExtensionDiscriminator::GroupPointer as u8,
-            InstructionDiscriminatorGroupPointer::Initialize as u8,
-        ],
-    );
     let mut offset = OFFSET::INITIAL as usize;
 
-    // === Set authority ===
-    // Set option
-    write_bytes(
-        &mut instruction_data[offset..offset + OFFSET::AUTHORITY_PRESENCE_FLAG as usize],
-        &[option_to_flag(authority)],
-    );
-    offset += OFFSET::AUTHORITY_PRESENCE_FLAG as usize;
+    // Set discriminators
+    buffer[0..offset].copy_from_slice(&[
+        ExtensionDiscriminator::GroupPointer as u8,
+        InstructionDiscriminatorGroupPointer::Initialize as u8,
+    ]);
 
-    // Try set value
+    // Set authority
     if let Some(x) = authority {
-        write_bytes(
-            &mut instruction_data[offset..offset + OFFSET::AUTHORITY_PUBKEY as usize],
-            x,
-        );
+        buffer[offset..offset + OFFSET::AUTHORITY_PUBKEY as usize].copy_from_slice(x);
         offset += OFFSET::AUTHORITY_PUBKEY as usize;
     }
 
-    // === Set group_address ===
-    // Set option
-    write_bytes(
-        &mut instruction_data[offset..offset + OFFSET::GROUP_ADDRESS_PRESENCE_FLAG as usize],
-        &[option_to_flag(group_address)],
-    );
-    offset += OFFSET::GROUP_ADDRESS_PRESENCE_FLAG as usize;
-
-    // Try set value
+    // Set group_address
     if let Some(x) = group_address {
-        write_bytes(
-            &mut instruction_data[offset..offset + OFFSET::GROUP_ADDRESS_PUBKEY as usize],
-            x,
-        );
+        buffer[offset..offset + OFFSET::GROUP_ADDRESS_PUBKEY as usize].copy_from_slice(x);
         offset += OFFSET::GROUP_ADDRESS_PUBKEY as usize;
     }
 
-    unsafe { from_raw_parts(instruction_data.as_ptr() as _, offset) }
+    &buffer[..offset]
 }
