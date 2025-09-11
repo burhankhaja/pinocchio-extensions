@@ -1,4 +1,5 @@
 use {
+    crate::helpers::from_optional_non_zero_pubkey,
     pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult},
     pinocchio_token_2022,
     spl_token_2022_interface::instruction::decode_instruction_data,
@@ -15,14 +16,27 @@ pub fn initialize(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramR
     } = decode_instruction_data(instruction_data)
         .map_err(|_| ProgramError::InvalidInstructionData)?;
 
+    let authority = from_optional_non_zero_pubkey(authority);
+    let group_address = from_optional_non_zero_pubkey(group_address);
+
+    if pinocchio_token_2022::state::Mint::from_account_info(mint)?.is_initialized() {
+        let pointer = pinocchio_token_2022::instructions::extension::group_pointer::states::GroupPointer::from_account_info(mint)?;
+
+        if pointer.authority() != authority.as_ref() {
+            Err(ProgramError::InvalidAccountData)?
+        }
+
+        if pointer.group_address() != group_address.as_ref() {
+            Err(ProgramError::InvalidAccountData)?
+        }
+
+        return Ok(());
+    }
+
     pinocchio_token_2022::instructions::extension::group_pointer::Initialize {
         mint,
-        authority: Option::<solana_address::Address>::from(authority)
-            .map(|x| x.to_bytes())
-            .as_ref(),
-        group_address: Option::<solana_address::Address>::from(group_address)
-            .map(|x| x.to_bytes())
-            .as_ref(),
+        authority: authority.as_ref(),
+        group_address: group_address.as_ref(),
         token_program: &token_program.key(),
     }
     .invoke()

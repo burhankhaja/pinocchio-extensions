@@ -135,6 +135,14 @@ fn proxy_initialize_group_pointer_with_token_group() -> TestResult<()> {
         freeze_authority.as_ref(),
     )?;
 
+    // execute twice to run internal checks
+    app.token_2022_proxy_try_initialize_group_pointer(
+        AppUser::Admin,
+        mint_pubkey,
+        Some(&mint_authority.pubkey()),
+        Some(mint_pubkey),
+    )?;
+
     app.token_2022_try_initialize_token_group(
         AppUser::Admin,
         mint_pubkey,

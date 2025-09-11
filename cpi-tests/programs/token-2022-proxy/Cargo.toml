@@ -21,3 +21,4 @@ pinocchio-token-2022 = { workspace = true }
 spl-token-2022-interface = "2.0.0"
 solana-program-option = "3.0.0"
 solana-address = "1.0.0"
+spl-pod = "0.7.1"
