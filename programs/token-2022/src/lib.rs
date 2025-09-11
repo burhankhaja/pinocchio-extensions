@@ -15,11 +15,3 @@ fn write_bytes(destination: &mut [MaybeUninit<u8>], source: &[u8]) {
         d.write(*s);
     }
 }
-
-#[inline(always)]
-fn option_to_flag<T>(value: Option<T>) -> u8 {
-    match value {
-        Some(_) => 1,
-        None => 0,
-    }
-}

@@ -75,12 +75,27 @@ fn initialize_group_pointer_with_token_group() -> TestResult<()> {
         token_group
     );
 
+    app.token_2022_try_update_group_pointer(
+        AppUser::Admin,
+        mint_pubkey,
+        &mint_authority.pubkey(),
+        None,
+    )?;
+
+    assert_eq!(
+        app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        GroupPointer {
+            authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&mint_authority.pubkey())),
+            group_address: OptionalNonZeroPubkey::default(),
+        }
+    );
+
     Ok(())
 }
 
 #[test]
 fn proxy_initialize_group_pointer_with_token_group() -> TestResult<()> {
-    let mut app = App::new(true);
+    let mut app = App::new(false);
     let (_, mint_keypair) = app.token_2022_try_create_mint_account(
         AppUser::Admin,
         None,
@@ -136,6 +151,21 @@ fn proxy_initialize_group_pointer_with_token_group() -> TestResult<()> {
     assert_eq!(
         app.token_2022_query_token_group_state(mint_pubkey)?,
         token_group
+    );
+
+    app.token_2022_proxy_try_update_group_pointer(
+        AppUser::Admin,
+        mint_pubkey,
+        &mint_authority.pubkey(),
+        None,
+    )?;
+
+    assert_eq!(
+        app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        GroupPointer {
+            authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&mint_authority.pubkey())),
+            group_address: OptionalNonZeroPubkey::default(),
+        }
     );
 
     Ok(())

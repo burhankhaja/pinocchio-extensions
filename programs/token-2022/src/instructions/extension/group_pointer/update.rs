@@ -1,18 +1,12 @@
 use {
-    crate::{
-        instructions::{
-            extension::group_pointer::{
-                offset_group_pointer_update as OFFSET, ExtensionDiscriminator,
-                InstructionDiscriminatorGroupPointer,
-            },
-            MAX_MULTISIG_SIGNERS,
+    crate::instructions::{
+        extension::group_pointer::{
+            offset_group_pointer_update as OFFSET, ExtensionDiscriminator,
+            InstructionDiscriminatorGroupPointer,
         },
-        option_to_flag, write_bytes, UNINIT_BYTE,
+        MAX_MULTISIG_SIGNERS,
     },
-    core::{
-        mem::MaybeUninit,
-        slice::{self, from_raw_parts},
-    },
+    core::{mem::MaybeUninit, slice},
     pinocchio::{
         account_info::AccountInfo,
         cpi::invoke_signed_with_bounds,
@@ -60,9 +54,9 @@ impl Update<'_> {
         let &Self {
             mint,
             authority,
-            group_address,
             signers: account_signers,
             token_program,
+            ..
         } = self;
 
         if account_signers.len() > MAX_MULTISIG_SIGNERS {
@@ -98,7 +92,8 @@ impl Update<'_> {
             account_meta.write(AccountMeta::readonly_signer(signer.key()));
         }
 
-        let data = update_instruction_data(group_address);
+        let mut buffer = [0u8; OFFSET::MAX as usize];
+        let data = update_instruction_data(&mut buffer, self.group_address);
 
         let instruction = Instruction {
             program_id: token_program,
@@ -132,36 +127,23 @@ impl Update<'_> {
     }
 }
 
-pub fn update_instruction_data<'a>(group_address: Option<&'a Pubkey>) -> &'a [u8] {
-    // Size depends on presence of authority and group_address
-    let mut instruction_data = [UNINIT_BYTE; OFFSET::MAX as usize];
-
-    // === Set discriminators ===
-    write_bytes(
-        &mut instruction_data,
-        &[
-            ExtensionDiscriminator::GroupPointer as u8,
-            InstructionDiscriminatorGroupPointer::Update as u8,
-        ],
-    );
+pub fn update_instruction_data<'a>(
+    buffer: &'a mut [u8],
+    group_address: Option<&'a Pubkey>,
+) -> &'a [u8] {
     let mut offset = OFFSET::INITIAL as usize;
 
-    // === Set group_address ===
-    // Set option
-    write_bytes(
-        &mut instruction_data[offset..offset + OFFSET::GROUP_ADDRESS_PRESENCE_FLAG as usize],
-        &[option_to_flag(group_address)],
-    );
-    offset += OFFSET::GROUP_ADDRESS_PRESENCE_FLAG as usize;
+    // Set discriminators
+    buffer[0..offset].copy_from_slice(&[
+        ExtensionDiscriminator::GroupPointer as u8,
+        InstructionDiscriminatorGroupPointer::Update as u8,
+    ]);
 
-    // Try set value
+    // Set group_address
     if let Some(x) = group_address {
-        write_bytes(
-            &mut instruction_data[offset..offset + OFFSET::GROUP_ADDRESS_PUBKEY as usize],
-            x,
-        );
-        offset += OFFSET::GROUP_ADDRESS_PUBKEY as usize;
+        buffer[offset..offset + OFFSET::GROUP_ADDRESS_PUBKEY as usize].copy_from_slice(x);
     }
+    offset += OFFSET::GROUP_ADDRESS_PUBKEY as usize;
 
-    unsafe { from_raw_parts(instruction_data.as_ptr() as _, offset) }
+    &buffer[..offset]
 }

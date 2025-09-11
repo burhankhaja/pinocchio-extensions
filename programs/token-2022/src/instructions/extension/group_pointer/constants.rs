@@ -18,14 +18,14 @@ pub enum InstructionDiscriminatorGroupPointer {
 /// - [36..68 or 4..36]          : group_address pubkey (optional, 32 bytes)
 pub mod offset_group_pointer_initialize {
     pub const INITIAL: u8 = 2;
-    pub const AUTHORITY_PRESENCE_FLAG: u8 = 1;
+    // pub const AUTHORITY_PRESENCE_FLAG: u8 = 1;
     pub const AUTHORITY_PUBKEY: u8 = 32;
-    pub const GROUP_ADDRESS_PRESENCE_FLAG: u8 = 1;
+    // pub const GROUP_ADDRESS_PRESENCE_FLAG: u8 = 1;
     pub const GROUP_ADDRESS_PUBKEY: u8 = 32;
     pub const MAX: u8 = INITIAL
-        + AUTHORITY_PRESENCE_FLAG
+        // + AUTHORITY_PRESENCE_FLAG
         + AUTHORITY_PUBKEY
-        + GROUP_ADDRESS_PRESENCE_FLAG
+        // + GROUP_ADDRESS_PRESENCE_FLAG
         + GROUP_ADDRESS_PUBKEY;
 }
 
@@ -36,7 +36,9 @@ pub mod offset_group_pointer_initialize {
 /// -  [3..35]: group_address pubkey (optional, 32 bytes)
 pub mod offset_group_pointer_update {
     pub const INITIAL: u8 = 2;
-    pub const GROUP_ADDRESS_PRESENCE_FLAG: u8 = 1;
+    // pub const GROUP_ADDRESS_PRESENCE_FLAG: u8 = 1;
     pub const GROUP_ADDRESS_PUBKEY: u8 = 32;
-    pub const MAX: u8 = INITIAL + GROUP_ADDRESS_PRESENCE_FLAG + GROUP_ADDRESS_PUBKEY;
+    pub const MAX: u8 = INITIAL 
+    // + GROUP_ADDRESS_PRESENCE_FLAG 
+    + GROUP_ADDRESS_PUBKEY;
 }

@@ -64,6 +64,7 @@ pub fn initialize_instruction_data<'a>(
         InstructionDiscriminatorGroupPointer::Initialize as u8,
     ]);
 
+    // TODO: does it work properly with None? Check update
     // Set authority
     if let Some(x) = authority {
         buffer[offset..offset + OFFSET::AUTHORITY_PUBKEY as usize].copy_from_slice(x);

@@ -1,15 +1,10 @@
 use {
     crate::helpers::suite::{
         core::{extension::send_tx, App, ProgramId},
-        types::{
-            addr_to_sol_pubkey, pin_pubkey_to_addr, pin_to_sol_pubkey, to_c_option, AppUser,
-            TestError, TestResult,
-        },
+        types::{addr_to_sol_pubkey, pin_pubkey_to_addr, AppUser, TestError, TestResult},
     },
     litesvm::types::TransactionMetadata,
     pinocchio::pubkey::Pubkey,
-    solana_keypair::Keypair,
-    solana_program_pack::Pack,
 };
 
 pub trait Token2022ConfidentialMintBurnExtension {
