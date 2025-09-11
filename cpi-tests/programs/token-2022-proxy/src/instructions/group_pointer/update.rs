@@ -9,8 +9,8 @@ pub fn update(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResul
     // For single authority: [mint, authority, authority (as signer), token_program]
     // For multisig: [mint, authority, signer1, signer2, ..., token_program]
 
-    if accounts.len() < 3 {
-        return Err(ProgramError::NotEnoughAccountKeys);
+    if accounts.len() < 4 {
+        Err(ProgramError::NotEnoughAccountKeys)?;
     }
 
     let token_program = accounts.last().unwrap(); // token_program is always last
@@ -29,7 +29,7 @@ pub fn update(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResul
         group_address: Option::<solana_address::Address>::from(group_address)
             .map(|x| x.to_bytes())
             .as_ref(),
-        signers: signers.iter().collect::<Vec<_>>().as_slice(),
+        signers,
         token_program: token_program.key(),
     }
     .invoke()

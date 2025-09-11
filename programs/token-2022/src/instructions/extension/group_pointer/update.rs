@@ -38,7 +38,7 @@ pub struct Update<'a> {
     /// The new account address that holds the group
     pub group_address: Option<&'a Pubkey>,
     /// The Signer accounts if `authority` is a multisig
-    pub signers: &'a [&'a AccountInfo],
+    pub signers: &'a [AccountInfo],
     /// Token Program
     pub token_program: &'a Pubkey,
 }
