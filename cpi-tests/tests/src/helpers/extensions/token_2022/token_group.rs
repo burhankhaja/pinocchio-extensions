@@ -2,8 +2,8 @@ use {
     crate::helpers::suite::{
         core::{extension::send_tx, App, ProgramId},
         types::{
-            addr_to_sol_pubkey, pin_pubkey_to_addr, pin_to_sol_pubkey, AppUser, SolPubkey,
-            TestError, TestResult,
+            addr_to_sol_pubkey, pin_pubkey_to_addr, pin_to_sol_pubkey, to_optional_non_zero_pubkey,
+            AppUser, SolPubkey, TestError, TestResult,
         },
     },
     litesvm::types::TransactionMetadata,
@@ -56,6 +56,11 @@ pub trait Token2022TokenGroupExtension {
     ) -> TestResult<TransactionMetadata>;
 
     fn token_2022_query_group_pointer_state(
+        &self,
+        mint: &Pubkey,
+    ) -> TestResult<spl_token_2022_interface::extension::group_pointer::GroupPointer>;
+
+    fn token_2022_proxy_query_group_pointer_state(
         &self,
         mint: &Pubkey,
     ) -> TestResult<spl_token_2022_interface::extension::group_pointer::GroupPointer>;
@@ -335,6 +340,26 @@ impl Token2022TokenGroupExtension for App {
             .get_extension::<spl_token_2022_interface::extension::group_pointer::GroupPointer>()
             .map(|&x| x)
             .map_err(TestError::from_raw_error)
+    }
+
+    fn token_2022_proxy_query_group_pointer_state(
+        &self,
+        mint: &Pubkey,
+    ) -> TestResult<spl_token_2022_interface::extension::group_pointer::GroupPointer> {
+        let data = &self
+            .litesvm
+            .get_account(&pin_to_sol_pubkey(mint))
+            .map(|x| x.data)
+            .ok_or(TestError::from_raw_error("The state isn't found"))?;
+
+        let state = pinocchio_token_2022::instructions::extension::group_pointer::states::GroupPointer::from_bytes(data).map_err(TestError::from_raw_error)?;
+
+        Ok(
+            spl_token_2022_interface::extension::group_pointer::GroupPointer {
+                authority: to_optional_non_zero_pubkey(state.authority()),
+                group_address: to_optional_non_zero_pubkey(state.group_address()),
+            },
+        )
     }
 
     fn token_2022_query_token_group_state(

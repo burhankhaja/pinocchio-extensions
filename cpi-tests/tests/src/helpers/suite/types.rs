@@ -300,3 +300,12 @@ pub fn to_c_option<T>(data: Option<T>) -> COption<T> {
         None => COption::None,
     }
 }
+
+pub fn to_optional_non_zero_pubkey(
+    data: Option<&pinocchio::pubkey::Pubkey>,
+) -> spl_pod::optional_keys::OptionalNonZeroPubkey {
+    match data {
+        Some(x) => spl_pod::optional_keys::OptionalNonZeroPubkey(pin_pubkey_to_addr(x)),
+        None => spl_pod::optional_keys::OptionalNonZeroPubkey::default(),
+    }
+}

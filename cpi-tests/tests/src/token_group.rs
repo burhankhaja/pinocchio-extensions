@@ -149,6 +149,10 @@ fn proxy_initialize_group_pointer_with_token_group() -> TestResult<()> {
         group_pointer
     );
     assert_eq!(
+        app.token_2022_proxy_query_group_pointer_state(mint_pubkey)?,
+        group_pointer
+    );
+    assert_eq!(
         app.token_2022_query_token_group_state(mint_pubkey)?,
         token_group
     );
@@ -249,6 +253,10 @@ fn proxy_initialize_group_pointer_with_default_authority() -> TestResult<()> {
 
     assert_eq!(
         app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        group_pointer
+    );
+    assert_eq!(
+        app.token_2022_proxy_query_group_pointer_state(mint_pubkey)?,
         group_pointer
     );
 
