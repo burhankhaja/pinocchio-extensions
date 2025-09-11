@@ -1,5 +1,5 @@
 use {
-    crate::instructions::extension::group_pointer::{
+    crate::instructions::extension::group_pointer::constants::{
         offset_group_pointer_initialize as OFFSET, ExtensionDiscriminator,
         InstructionDiscriminatorGroupPointer,
     },

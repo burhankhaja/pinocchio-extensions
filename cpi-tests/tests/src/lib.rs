@@ -8,7 +8,6 @@ pub mod token_group;
 pub mod helpers {
     pub mod extensions {
         pub mod token_2022 {
-            pub mod confidential_mint_burn;
             pub mod initialize_mint;
             pub mod token_group;
             pub mod token_metadata;

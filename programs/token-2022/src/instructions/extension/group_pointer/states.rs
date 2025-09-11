@@ -7,7 +7,6 @@ use {
     },
 };
 
-#[derive(Debug)]
 #[repr(C)]
 pub struct GroupPointer {
     /// Authority that can set the group address
@@ -16,15 +15,15 @@ pub struct GroupPointer {
     group_address: Pubkey,
 }
 
-// TODO: from_bytes, from_account_info_unchecked, from_account_info
 impl GroupPointer {
+    /// The length of the mint with `GroupPointer` extension data
     const LEN: u8 = 234;
+    /// The index where authority address starts in the mint with `GroupPointer` extension data
     const AUTHORITY_START: u8 = 170;
 
     /// The length of the `GroupPointer` extension data.
-    //  pub const BASE_LEN: usize = core::mem::size_of::<GroupPointer>();
+    pub const BASE_LEN: usize = core::mem::size_of::<GroupPointer>();
 
-    // TODO: should we read MinterWithPointer or Minter, Pointer?
     /// Return a `GroupPointer` from the given account info.
     ///
     /// This method performs owner and length validation on `AccountInfo`, safe borrowing
@@ -86,7 +85,7 @@ impl GroupPointer {
     /// # Safety
     ///
     /// The caller must ensure that:
-    /// 1. `bytes` contains at least `BASE_LEN` bytes
+    /// 1. `bytes` contains at least `LEN` bytes
     /// 2. `bytes` contains a valid representation of `GroupPointer`
     /// 3. The data is properly aligned (though GroupPointer has alignment of 1)
     /// 4. The bytes represent valid flag values and pubkey data
@@ -101,9 +100,6 @@ impl GroupPointer {
         if bytes.len() < Self::LEN as usize {
             Err(ProgramError::InvalidAccountData)?;
         }
-
-        // Additional validation could be added here if needed
-        // For example, validating that flags only use defined bits
 
         Ok(unsafe { Self::from_bytes_unchecked(bytes) })
     }
