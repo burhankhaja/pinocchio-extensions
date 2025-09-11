@@ -38,7 +38,7 @@ impl Initialize<'_> {
     pub fn invoke_signed(&self, signers: &[Signer]) -> ProgramResult {
         let account_metas = [AccountMeta::writable(self.mint.key())];
 
-        let mut buffer = [0u8; OFFSET::MAX as usize];
+        let mut buffer = [0u8; OFFSET::END as usize];
         let data = initialize_instruction_data(&mut buffer, self.authority, self.group_address);
 
         let instruction = Instruction {
@@ -56,7 +56,7 @@ pub fn initialize_instruction_data<'a>(
     authority: Option<&'a Pubkey>,
     group_address: Option<&'a Pubkey>,
 ) -> &'a [u8] {
-    let mut offset = OFFSET::INITIAL as usize;
+    let mut offset = OFFSET::START as usize;
 
     // Set discriminators
     buffer[0..offset].copy_from_slice(&[
@@ -64,18 +64,16 @@ pub fn initialize_instruction_data<'a>(
         InstructionDiscriminatorGroupPointer::Initialize as u8,
     ]);
 
-    // TODO: does it work properly with None? Check update
     // Set authority
     if let Some(x) = authority {
         buffer[offset..offset + OFFSET::AUTHORITY_PUBKEY as usize].copy_from_slice(x);
-        offset += OFFSET::AUTHORITY_PUBKEY as usize;
     }
+    offset += OFFSET::AUTHORITY_PUBKEY as usize;
 
     // Set group_address
     if let Some(x) = group_address {
         buffer[offset..offset + OFFSET::GROUP_ADDRESS_PUBKEY as usize].copy_from_slice(x);
-        offset += OFFSET::GROUP_ADDRESS_PUBKEY as usize;
     }
 
-    &buffer[..offset]
+    buffer
 }

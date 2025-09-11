@@ -170,3 +170,87 @@ fn proxy_initialize_group_pointer_with_token_group() -> TestResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn initialize_group_pointer_with_default_authority() -> TestResult<()> {
+    let mut app = App::new(false);
+    let (_, mint_keypair) = app.token_2022_try_create_mint_account(
+        AppUser::Admin,
+        None,
+        Some(&[ExtensionType::GroupPointer]),
+    )?;
+
+    let mint_pubkey = &mint_keypair.pubkey().to_bytes();
+    let decimals: u8 = 6;
+    let mint_authority = AppUser::Admin;
+    let freeze_authority = Some(AppUser::Admin.pubkey());
+
+    let group_pointer = GroupPointer {
+        authority: OptionalNonZeroPubkey::default(),
+        group_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
+    };
+
+    app.token_2022_try_initialize_group_pointer(
+        AppUser::Admin,
+        mint_pubkey,
+        None,
+        Some(mint_pubkey),
+    )?;
+
+    app.token_2022_try_initialize_mint(
+        AppUser::Admin,
+        mint_pubkey,
+        decimals,
+        &mint_authority.pubkey(),
+        freeze_authority.as_ref(),
+    )?;
+
+    assert_eq!(
+        app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        group_pointer
+    );
+
+    Ok(())
+}
+
+#[test]
+fn proxy_initialize_group_pointer_with_default_authority() -> TestResult<()> {
+    let mut app = App::new(false);
+    let (_, mint_keypair) = app.token_2022_try_create_mint_account(
+        AppUser::Admin,
+        None,
+        Some(&[ExtensionType::GroupPointer]),
+    )?;
+
+    let mint_pubkey = &mint_keypair.pubkey().to_bytes();
+    let decimals: u8 = 6;
+    let mint_authority = AppUser::Admin;
+    let freeze_authority = Some(AppUser::Admin.pubkey());
+
+    let group_pointer = GroupPointer {
+        authority: OptionalNonZeroPubkey::default(),
+        group_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
+    };
+
+    app.token_2022_proxy_try_initialize_group_pointer(
+        AppUser::Admin,
+        mint_pubkey,
+        None,
+        Some(mint_pubkey),
+    )?;
+
+    app.token_2022_try_initialize_mint(
+        AppUser::Admin,
+        mint_pubkey,
+        decimals,
+        &mint_authority.pubkey(),
+        freeze_authority.as_ref(),
+    )?;
+
+    assert_eq!(
+        app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        group_pointer
+    );
+
+    Ok(())
+}

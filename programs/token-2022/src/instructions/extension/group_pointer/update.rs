@@ -92,7 +92,7 @@ impl Update<'_> {
             account_meta.write(AccountMeta::readonly_signer(signer.key()));
         }
 
-        let mut buffer = [0u8; OFFSET::MAX as usize];
+        let mut buffer = [0u8; OFFSET::END as usize];
         let data = update_instruction_data(&mut buffer, self.group_address);
 
         let instruction = Instruction {
@@ -131,7 +131,7 @@ pub fn update_instruction_data<'a>(
     buffer: &'a mut [u8],
     group_address: Option<&'a Pubkey>,
 ) -> &'a [u8] {
-    let mut offset = OFFSET::INITIAL as usize;
+    let offset = OFFSET::START as usize;
 
     // Set discriminators
     buffer[0..offset].copy_from_slice(&[
@@ -143,7 +143,6 @@ pub fn update_instruction_data<'a>(
     if let Some(x) = group_address {
         buffer[offset..offset + OFFSET::GROUP_ADDRESS_PUBKEY as usize].copy_from_slice(x);
     }
-    offset += OFFSET::GROUP_ADDRESS_PUBKEY as usize;
 
-    &buffer[..offset]
+    buffer
 }
