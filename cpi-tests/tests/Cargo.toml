@@ -23,7 +23,6 @@ pinocchio-token = { workspace = true }
 pinocchio-token-2022 = { workspace = true }
 # spl cpi
 spl-token-group-interface = "0.7.1"
-spl-token-metadata-interface = "0.8.0"
 spl-token-2022-interface = "2.0.0"
 # cpi consumers
 token-2022-proxy = { workspace = true }
