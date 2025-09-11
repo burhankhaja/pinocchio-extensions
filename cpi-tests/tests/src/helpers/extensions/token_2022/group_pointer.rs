@@ -8,11 +8,10 @@ use {
     },
     litesvm::types::TransactionMetadata,
     pinocchio::pubkey::Pubkey,
-    // spl_pod::bytemuck::pod_from_bytes,
     spl_token_2022_interface::extension::BaseStateWithExtensions,
 };
 
-pub trait Token2022TokenGroupExtension {
+pub trait Token2022GroupPointerExtension {
     fn token_2022_try_initialize_group_pointer(
         &mut self,
         sender: AppUser,
@@ -44,16 +43,6 @@ pub trait Token2022TokenGroupExtension {
         authority: &Pubkey,
         group_address: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata>;
-
-    // fn token_2022_try_initialize_token_group(
-    //     &mut self,
-    //     sender: AppUser,
-    //     group: &Pubkey,
-    //     mint: &Pubkey,
-    //     mint_authority: AppUser,
-    //     update_authority: Option<&Pubkey>,
-    //     max_size: u64,
-    // ) -> TestResult<TransactionMetadata>;
 
     fn token_2022_query_group_pointer_state(
         &self,
@@ -64,14 +53,9 @@ pub trait Token2022TokenGroupExtension {
         &self,
         mint: &Pubkey,
     ) -> TestResult<spl_token_2022_interface::extension::group_pointer::GroupPointer>;
-
-    // fn token_2022_query_token_group_state(
-    //     &self,
-    //     group: &Pubkey,
-    // ) -> TestResult<spl_token_group_interface::state::TokenGroup>;
 }
 
-impl Token2022TokenGroupExtension for App {
+impl Token2022GroupPointerExtension for App {
     fn token_2022_try_initialize_group_pointer(
         &mut self,
         sender: AppUser,
@@ -267,58 +251,6 @@ impl Token2022TokenGroupExtension for App {
             self.is_log_displayed,
         )
     }
-
-    // fn token_2022_try_initialize_token_group(
-    //     &mut self,
-    //     sender: AppUser,
-    //     group: &Pubkey,
-    //     mint: &Pubkey,
-    //     mint_authority: AppUser,
-    //     update_authority: Option<&Pubkey>,
-    //     max_size: u64,
-    // ) -> TestResult<TransactionMetadata> {
-    //     let ProgramId {
-    //         token_2022_program, ..
-    //     } = self.program_id;
-
-    //     let signers = &[&sender.keypair(), &mint_authority.keypair()];
-
-    //     let lamports = self
-    //         .litesvm
-    //         .get_sysvar::<solana_program::sysvar::rent::Rent>()
-    //         .minimum_balance(max_size as usize);
-    //     self.transfer_sol(sender, &pin_to_sol_pubkey(&mint), lamports)?;
-
-    //     let ix = spl_token_group_interface::instruction::initialize_group(
-    //         &token_2022_program.to_bytes().into(),
-    //         &pin_pubkey_to_addr(group),
-    //         &pin_pubkey_to_addr(mint),
-    //         &mint_authority.pubkey().to_bytes().into(),
-    //         update_authority.map(pin_pubkey_to_addr),
-    //         max_size,
-    //     );
-
-    //     let ix_legacy = solana_instruction::Instruction {
-    //         program_id: addr_to_sol_pubkey(&ix.program_id),
-    //         accounts: ix
-    //             .accounts
-    //             .into_iter()
-    //             .map(|x| solana_instruction::AccountMeta {
-    //                 pubkey: addr_to_sol_pubkey(&x.pubkey),
-    //                 is_signer: x.is_signer,
-    //                 is_writable: x.is_writable,
-    //             })
-    //             .collect(),
-    //         data: ix.data,
-    //     };
-
-    //     send_tx(
-    //         &mut self.litesvm,
-    //         &[ix_legacy],
-    //         signers,
-    //         self.is_log_displayed,
-    //     )
-    // }
 
     fn token_2022_query_group_pointer_state(
         &self,
@@ -361,30 +293,4 @@ impl Token2022TokenGroupExtension for App {
             },
         )
     }
-
-    // fn token_2022_query_token_group_state(
-    //     &self,
-    //     group: &Pubkey,
-    // ) -> TestResult<spl_token_group_interface::state::TokenGroup> {
-    //     let account = self
-    //         .litesvm
-    //         .get_account(&pin_to_sol_pubkey(group))
-    //         .ok_or(TestError::from_raw_error("The account isn't found"))?;
-
-    //     // Parse the mint account with extensions
-    //     let mint_with_extensions = spl_token_2022_interface::extension::StateWithExtensions::<
-    //         spl_token_2022_interface::state::Mint,
-    //     >::unpack(&account.data)
-    //     .map_err(TestError::from_raw_error)?;
-
-    //     // Get extension bytes
-    //     let extension_bytes = mint_with_extensions
-    //         .get_extension_bytes::<spl_token_group_interface::state::TokenGroup>()
-    //         .map_err(TestError::from_raw_error)?;
-
-    //     // Deserialize extension bytes
-    //     pod_from_bytes::<spl_token_group_interface::state::TokenGroup>(extension_bytes)
-    //         .map(|&x| x)
-    //         .map_err(TestError::from_raw_error)
-    // }
 }
