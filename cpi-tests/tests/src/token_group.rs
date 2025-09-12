@@ -67,20 +67,20 @@ fn initialize_token_group() -> TestResult<()> {
         token_group
     );
 
-    // app.token_2022_try_update_group_max_size(
-    //     AppUser::Admin,
-    //     mint_pubkey,
-    //     mint_authority,
-    //     &update_authority.to_bytes(),
-    //     max_size,
-    // )?;
+    app.token_2022_try_update_group_max_size(
+        AppUser::Admin,
+        mint_pubkey,
+        mint_authority,
+        &update_authority.to_bytes(),
+        max_size,
+    )?;
 
-    // app.token_2022_try_update_group_authority(
-    //     AppUser::Admin,
-    //     mint_pubkey,
-    //     &mint_authority.pubkey(),
-    //     None,
-    // )?;
+    app.token_2022_try_update_group_authority(
+        AppUser::Admin,
+        mint_pubkey,
+        &mint_authority.pubkey(),
+        None,
+    )?;
 
     // app.token_2022_try_initialize_member(
     //     AppUser::Admin,
@@ -151,6 +151,30 @@ fn proxy_initialize_token_group() -> TestResult<()> {
         app.token_2022_proxy_query_token_group_state(mint_pubkey)?,
         token_group
     );
+
+    app.token_2022_proxy_try_update_group_max_size(
+        AppUser::Admin,
+        mint_pubkey,
+        mint_authority,
+        &update_authority.to_bytes(),
+        max_size,
+    )?;
+
+    app.token_2022_proxy_try_update_group_authority(
+        AppUser::Admin,
+        mint_pubkey,
+        &mint_authority.pubkey(),
+        None,
+    )?;
+
+    // app.token_2022_proxy_try_initialize_member(
+    //     AppUser::Admin,
+    //     mint_pubkey,
+    //     &AppUser::Admin.keypair(),
+    //     &AppUser::Bob.pubkey(),
+    //     &AppUser::Bob.pubkey(),
+    //     &AppUser::Bob.keypair(),
+    // )?;
 
     Ok(())
 }

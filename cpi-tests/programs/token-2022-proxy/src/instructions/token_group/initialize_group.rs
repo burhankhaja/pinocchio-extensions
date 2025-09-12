@@ -5,7 +5,7 @@ use {
     spl_pod::{optional_keys::OptionalNonZeroPubkey, primitives::PodU64},
 };
 
-pub fn initialize(
+pub fn initialize_group(
     accounts: &[AccountInfo],
     update_authority: OptionalNonZeroPubkey,
     max_size: PodU64,

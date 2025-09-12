@@ -136,7 +136,7 @@ pub fn update_instruction_data<'a>(
     let offset = OFFSET::START as usize;
 
     // Set discriminators
-    buffer[0..offset].copy_from_slice(&[
+    buffer[..offset].copy_from_slice(&[
         ExtensionDiscriminator::GroupPointer as u8,
         InstructionDiscriminatorGroupPointer::Update as u8,
     ]);

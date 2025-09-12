@@ -44,6 +44,15 @@ pub trait Token2022TokenGroupExtension {
         max_size: u64,
     ) -> TestResult<TransactionMetadata>;
 
+    fn token_2022_proxy_try_update_group_max_size(
+        &mut self,
+        sender: AppUser,
+        group: &Pubkey,
+        mint_authority: AppUser,
+        update_authority: &Pubkey,
+        max_size: u64,
+    ) -> TestResult<TransactionMetadata>;
+
     fn token_2022_try_update_group_authority(
         &mut self,
         sender: AppUser,
@@ -52,7 +61,25 @@ pub trait Token2022TokenGroupExtension {
         new_authority: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata>;
 
+    fn token_2022_proxy_try_update_group_authority(
+        &mut self,
+        sender: AppUser,
+        group: &Pubkey,
+        current_authority: &Pubkey,
+        new_authority: Option<&Pubkey>,
+    ) -> TestResult<TransactionMetadata>;
+
     fn token_2022_try_initialize_member(
+        &mut self,
+        sender: AppUser,
+        group: &Pubkey,
+        group_update_authority: &Keypair,
+        member: &Pubkey,
+        member_mint: &Pubkey,
+        member_mint_authority: &Keypair,
+    ) -> TestResult<TransactionMetadata>;
+
+    fn token_2022_proxy_try_initialize_member(
         &mut self,
         sender: AppUser,
         group: &Pubkey,
@@ -245,6 +272,58 @@ impl Token2022TokenGroupExtension for App {
         )
     }
 
+    fn token_2022_proxy_try_update_group_max_size(
+        &mut self,
+        sender: AppUser,
+        group: &Pubkey,
+        mint_authority: AppUser,
+        update_authority: &Pubkey,
+        max_size: u64,
+    ) -> TestResult<TransactionMetadata> {
+        let ProgramId {
+            token_2022_proxy,
+            token_2022_program,
+            ..
+        } = self.program_id;
+
+        let signers = &[&sender.keypair(), &mint_authority.keypair()];
+
+        let ix = spl_token_group_interface::instruction::update_group_max_size(
+            &token_2022_program.to_bytes().into(),
+            &pin_pubkey_to_addr(group),
+            &pin_pubkey_to_addr(update_authority),
+            max_size,
+        );
+
+        // required by runtime to validate programs
+        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
+            token_2022_program,
+            false,
+        )];
+
+        let ix_legacy = solana_instruction::Instruction {
+            program_id: token_2022_proxy,
+            accounts: ix
+                .accounts
+                .into_iter()
+                .map(|x| solana_instruction::AccountMeta {
+                    pubkey: addr_to_sol_pubkey(&x.pubkey),
+                    is_signer: x.is_signer,
+                    is_writable: x.is_writable,
+                })
+                .chain(additional_accounts.into_iter())
+                .collect(),
+            data: ix.data,
+        };
+
+        send_tx(
+            &mut self.litesvm,
+            &[ix_legacy],
+            signers,
+            self.is_log_displayed,
+        )
+    }
+
     fn token_2022_try_update_group_authority(
         &mut self,
         sender: AppUser,
@@ -279,6 +358,57 @@ impl Token2022TokenGroupExtension for App {
                     is_signer: x.is_signer,
                     is_writable: x.is_writable,
                 })
+                .collect(),
+            data: ix.data,
+        };
+
+        send_tx(
+            &mut self.litesvm,
+            &[ix_legacy],
+            signers,
+            self.is_log_displayed,
+        )
+    }
+
+    fn token_2022_proxy_try_update_group_authority(
+        &mut self,
+        sender: AppUser,
+        group: &Pubkey,
+        current_authority: &Pubkey,
+        new_authority: Option<&Pubkey>,
+    ) -> TestResult<TransactionMetadata> {
+        let ProgramId {
+            token_2022_proxy,
+            token_2022_program,
+            ..
+        } = self.program_id;
+
+        let signers = &[&sender.keypair()];
+
+        let ix = spl_token_group_interface::instruction::update_group_authority(
+            &token_2022_program.to_bytes().into(),
+            &pin_pubkey_to_addr(group),
+            &pin_pubkey_to_addr(current_authority),
+            new_authority.map(pin_pubkey_to_addr),
+        );
+
+        // required by runtime to validate programs
+        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
+            token_2022_program,
+            false,
+        )];
+
+        let ix_legacy = solana_instruction::Instruction {
+            program_id: token_2022_proxy,
+            accounts: ix
+                .accounts
+                .into_iter()
+                .map(|x| solana_instruction::AccountMeta {
+                    pubkey: addr_to_sol_pubkey(&x.pubkey),
+                    is_signer: x.is_signer,
+                    is_writable: x.is_writable,
+                })
+                .chain(additional_accounts.into_iter())
                 .collect(),
             data: ix.data,
         };
@@ -334,6 +464,65 @@ impl Token2022TokenGroupExtension for App {
                     is_signer: x.is_signer,
                     is_writable: x.is_writable,
                 })
+                .collect(),
+            data: ix.data,
+        };
+
+        send_tx(
+            &mut self.litesvm,
+            &[ix_legacy],
+            signers,
+            self.is_log_displayed,
+        )
+    }
+
+    fn token_2022_proxy_try_initialize_member(
+        &mut self,
+        sender: AppUser,
+        group: &Pubkey,
+        group_update_authority: &Keypair,
+        member: &Pubkey,
+        member_mint: &Pubkey,
+        member_mint_authority: &Keypair,
+    ) -> TestResult<TransactionMetadata> {
+        let ProgramId {
+            token_2022_proxy,
+            token_program,
+            ..
+        } = self.program_id;
+
+        let signers = &[
+            &sender.keypair(),
+            member_mint_authority,
+            group_update_authority,
+        ];
+
+        let ix = spl_token_group_interface::instruction::initialize_member(
+            &token_program.to_bytes().into(),
+            &pin_pubkey_to_addr(member),
+            &pin_pubkey_to_addr(member_mint),
+            &member_mint_authority.pubkey().to_bytes().into(),
+            &pin_pubkey_to_addr(group),
+            &group_update_authority.pubkey().to_bytes().into(),
+        );
+
+        // required by runtime to validate programs
+        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
+            token_program,
+            false,
+        )];
+
+        let ix_legacy = solana_instruction::Instruction {
+            program_id: token_2022_proxy,
+            accounts: ix
+                .accounts
+                .into_iter()
+                .map(|x| solana_instruction::AccountMeta {
+                    pubkey: addr_to_sol_pubkey(&x.pubkey),
+                    is_signer: x.is_signer,
+                    is_writable: x.is_writable,
+                })
+                .chain(additional_accounts.into_iter())
                 .collect(),
             data: ix.data,
         };

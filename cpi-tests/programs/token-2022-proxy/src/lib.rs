@@ -67,17 +67,15 @@ pub fn process_instruction(
                     TokenGroupInstruction::InitializeGroup(InitializeGroup {
                         update_authority,
                         max_size,
-                    }) => i::token_group::initialize(accounts, update_authority, max_size),
+                    }) => i::token_group::initialize_group(accounts, update_authority, max_size),
                     TokenGroupInstruction::UpdateGroupMaxSize(UpdateGroupMaxSize { max_size }) => {
-                        todo!()
+                        i::token_group::update_max_size(accounts, max_size)
                     }
                     TokenGroupInstruction::UpdateGroupAuthority(UpdateGroupAuthority {
                         new_authority,
-                    }) => {
-                        todo!()
-                    }
+                    }) => i::token_group::update_group_authority(accounts, new_authority),
                     TokenGroupInstruction::InitializeMember(InitializeMember) => {
-                        todo!()
+                        i::token_group::initialize_member(accounts)
                     }
                 },
                 _ => Err(ProgramError::InvalidInstructionData)?,

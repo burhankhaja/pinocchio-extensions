@@ -75,7 +75,7 @@ pub fn initialize_group_instruction_data<'a>(
     let mut offset = OFFSET::START as usize;
 
     // Set discriminators
-    buffer[0..offset].copy_from_slice(
+    buffer[..offset].copy_from_slice(
         &(InstructionDiscriminatorTokenGroup::InitializeGroup as u64).to_le_bytes(),
     );
 
