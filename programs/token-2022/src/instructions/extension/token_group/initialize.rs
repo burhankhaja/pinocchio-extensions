@@ -1,79 +1,92 @@
-// use {
-//     crate::instructions::extension::group_pointer::constants::{
-//         offset_group_pointer_initialize as OFFSET, ExtensionDiscriminator,
-//         InstructionDiscriminatorGroupPointer,
-//     },
-//     pinocchio::{
-//         account_info::AccountInfo,
-//         cpi::invoke_signed,
-//         instruction::{AccountMeta, Instruction, Signer},
-//         pubkey::Pubkey,
-//         ProgramResult,
-//     },
-// };
+use {
+    crate::instructions::extension::token_group::constants::{
+        offset_token_group_initialize_group as OFFSET, InstructionDiscriminatorTokenGroup,
+    },
+    pinocchio::{
+        account_info::AccountInfo,
+        cpi::invoke_signed,
+        instruction::{AccountMeta, Instruction, Signer},
+        pubkey::Pubkey,
+        ProgramResult,
+    },
+};
 
-// /// Initialize a new mint with a group pointer
-// ///
-// /// Accounts expected by this instruction:
-// ///
-// ///  0. `[writable]` The mint to initialize.
-// pub struct Initialize<'a> {
-//     /// Mint Account
-//     pub mint: &'a AccountInfo,
-//     /// Optional authority that can set the group address
-//     pub authority: Option<&'a Pubkey>,
-//     /// Optional account address that holds the group
-//     pub group_address: Option<&'a Pubkey>,
-//     /// Token Program
-//     pub token_program: &'a Pubkey,
-// }
+/// Initialize a new `Group`
+///
+/// Assumes one has already initialized a mint for the group.
+///
+/// Accounts expected by this instruction:
+///
+///   0. `[writable]` Group
+///   1. `[]` Mint
+///   2. `[signer]` Mint authority
+pub struct InitializeGroup<'a> {
+    /// Group Account
+    pub group: &'a AccountInfo,
+    /// Mint Account
+    pub mint: &'a AccountInfo,
+    /// Mint authority
+    pub mint_authority: &'a AccountInfo,
+    /// Update authority for the group
+    pub update_authority: Option<&'a Pubkey>,
+    /// The maximum number of group members
+    pub max_size: u64,
+    /// Token Group Program
+    pub program_id: &'a Pubkey,
+}
 
-// impl Initialize<'_> {
-//     #[inline(always)]
-//     pub fn invoke(&self) -> ProgramResult {
-//         self.invoke_signed(&[])
-//     }
+impl InitializeGroup<'_> {
+    #[inline(always)]
+    pub fn invoke(&self) -> ProgramResult {
+        self.invoke_signed(&[])
+    }
 
-//     #[inline(always)]
-//     pub fn invoke_signed(&self, signers: &[Signer]) -> ProgramResult {
-//         let account_metas = [AccountMeta::writable(self.mint.key())];
+    #[inline(always)]
+    pub fn invoke_signed(&self, signers: &[Signer]) -> ProgramResult {
+        let account_metas = [
+            AccountMeta::writable(self.group.key()),
+            AccountMeta::readonly(self.mint.key()),
+            AccountMeta::readonly_signer(self.mint_authority.key()),
+        ];
 
-//         let mut buffer = [0u8; OFFSET::END as usize];
-//         let data = initialize_instruction_data(&mut buffer, self.authority, self.group_address);
+        let mut buffer = [0u8; OFFSET::END as usize];
+        let data =
+            initialize_group_instruction_data(&mut buffer, self.update_authority, self.max_size);
 
-//         let instruction = Instruction {
-//             program_id: self.token_program,
-//             accounts: &account_metas,
-//             data,
-//         };
+        let instruction = Instruction {
+            program_id: self.program_id,
+            accounts: &account_metas,
+            data,
+        };
 
-//         invoke_signed(&instruction, &[self.mint], signers)
-//     }
-// }
+        invoke_signed(
+            &instruction,
+            &[self.group, self.mint, self.mint_authority],
+            signers,
+        )
+    }
+}
 
-// pub fn initialize_instruction_data<'a>(
-//     buffer: &'a mut [u8],
-//     authority: Option<&'a Pubkey>,
-//     group_address: Option<&'a Pubkey>,
-// ) -> &'a [u8] {
-//     let mut offset = OFFSET::START as usize;
+pub fn initialize_group_instruction_data<'a>(
+    buffer: &'a mut [u8],
+    update_authority: Option<&'a Pubkey>,
+    max_size: u64,
+) -> &'a [u8] {
+    let mut offset = OFFSET::START as usize;
 
-//     // Set discriminators
-//     buffer[0..offset].copy_from_slice(&[
-//         ExtensionDiscriminator::GroupPointer as u8,
-//         InstructionDiscriminatorGroupPointer::Initialize as u8,
-//     ]);
+    // Set discriminators
+    buffer[0..offset].copy_from_slice(
+        &(InstructionDiscriminatorTokenGroup::InitializeGroup as u64).to_le_bytes(),
+    );
 
-//     // Set authority
-//     if let Some(x) = authority {
-//         buffer[offset..offset + OFFSET::AUTHORITY_PUBKEY as usize].copy_from_slice(x);
-//     }
-//     offset += OFFSET::AUTHORITY_PUBKEY as usize;
+    // Set update_authority
+    if let Some(x) = update_authority {
+        buffer[offset..offset + OFFSET::UPDATE_AUTHORITY as usize].copy_from_slice(x);
+    }
+    offset += OFFSET::UPDATE_AUTHORITY as usize;
 
-//     // Set group_address
-//     if let Some(x) = group_address {
-//         buffer[offset..offset + OFFSET::GROUP_ADDRESS_PUBKEY as usize].copy_from_slice(x);
-//     }
+    // Set max_size
+    buffer[offset..offset + OFFSET::MAX_SIZE as usize].copy_from_slice(&max_size.to_le_bytes());
 
-//     buffer
-// }
+    buffer
+}

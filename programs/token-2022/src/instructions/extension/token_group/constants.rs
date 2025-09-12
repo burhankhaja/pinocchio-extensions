@@ -6,14 +6,38 @@ pub enum InstructionDiscriminatorTokenGroup {
     InitializeMember = 9688630243381616792, // [152, 32, 222, 176, 223, 237, 116, 134]
 }
 
-// /// Instruction data layout:
-// /// - [0]                        : GroupPointerExtension discriminator (1 byte)
-// /// - [1]                        : Initialize discriminator (1 byte)
-// /// - [2..34]                    : authority pubkey (32 bytes)
-// /// - [34..66]                   : group_address pubkey (32 bytes)
-// pub mod offset_token_group_initialize {
-//     pub const START: u8 = 2;
-//     pub const AUTHORITY_PUBKEY: u8 = 32;
-//     pub const GROUP_ADDRESS_PUBKEY: u8 = 32;
-//     pub const END: u8 = START + AUTHORITY_PUBKEY + GROUP_ADDRESS_PUBKEY;
-// }
+/// Instruction data layout:
+/// - [0..8]                     : Instruction discriminator (8 bytes)
+/// - [8..40]                    : update_authority pubkey (32 bytes)
+/// - [40..48]                   : max_size (8 bytes)
+pub mod offset_token_group_initialize_group {
+    pub const START: u8 = 8;
+    pub const UPDATE_AUTHORITY: u8 = 32;
+    pub const MAX_SIZE: u8 = 8;
+    pub const END: u8 = START + UPDATE_AUTHORITY + MAX_SIZE;
+}
+
+/// Instruction data layout:
+/// - [0..8]                     : Instruction discriminator (8 bytes)
+/// - [8..16]                    : max_size (8 bytes)
+pub mod offset_token_group_update_max_size {
+    pub const START: u8 = 8;
+    pub const MAX_SIZE: u8 = 8;
+    pub const END: u8 = START + MAX_SIZE;
+}
+
+/// Instruction data layout:
+/// - [0..8]                     : Instruction discriminator (8 bytes)
+/// - [8..40]                    : new_authority pubkey (32 bytes)
+pub mod offset_token_group_update_authority {
+    pub const START: u8 = 8;
+    pub const NEW_AUTHORITY: u8 = 32;
+    pub const END: u8 = START + NEW_AUTHORITY;
+}
+
+/// Instruction data layout:
+/// - [0..8]                     : Instruction discriminator (8 bytes)
+pub mod offset_token_group_initialize_member {
+    pub const START: u8 = 8;
+    pub const END: u8 = START;
+}

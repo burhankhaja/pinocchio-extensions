@@ -1,4 +1,5 @@
 pub mod group_pointer;
-pub mod initialize_mint;
+mod initialize_mint;
+pub mod token_group;
 
-pub use initialize_mint::*;
+pub use initialize_mint::initialize_mint;

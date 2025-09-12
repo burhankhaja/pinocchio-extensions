@@ -67,9 +67,7 @@ pub fn process_instruction(
                     TokenGroupInstruction::InitializeGroup(InitializeGroup {
                         update_authority,
                         max_size,
-                    }) => {
-                        todo!()
-                    }
+                    }) => i::token_group::initialize(accounts, update_authority, max_size),
                     TokenGroupInstruction::UpdateGroupMaxSize(UpdateGroupMaxSize { max_size }) => {
                         todo!()
                     }
