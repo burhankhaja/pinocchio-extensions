@@ -278,8 +278,11 @@ impl TestError {
     }
 }
 
+/// to switch between SPL and Proxy programs
 pub enum Target {
+    /// execute token-2022 instruction directly, read token-2022 state using spl interface
     Spl,
+    /// execute token-2022 instruction using proxy program, read token-2022 state using pinocchio interface
     Proxy,
 }
 

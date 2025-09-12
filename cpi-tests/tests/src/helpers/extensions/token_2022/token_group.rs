@@ -1,9 +1,12 @@
 use {
     crate::helpers::suite::{
-        core::{extension::send_tx, App, ProgramId},
+        core::{
+            extension::{get_account_data, send_tx},
+            App, ProgramId,
+        },
         types::{
             addr_to_sol_pubkey, pin_pubkey_to_addr, pin_to_sol_pubkey, to_optional_non_zero_pubkey,
-            AppUser, SolPubkey, TestError, TestResult,
+            AppUser, SolPubkey, Target, TestError, TestResult,
         },
     },
     litesvm::types::TransactionMetadata,
@@ -11,22 +14,17 @@ use {
     solana_keypair::Keypair,
     solana_signer::Signer,
     spl_pod::bytemuck::pod_from_bytes,
-    spl_token_2022_interface::extension::BaseStateWithExtensions,
+    spl_token_2022_interface::{
+        extension::{BaseStateWithExtensions, StateWithExtensions},
+        state::Mint,
+    },
+    spl_token_group_interface::state::{TokenGroup, TokenGroupMember},
 };
 
 pub trait Token2022TokenGroupExtension {
     fn token_2022_try_initialize_token_group(
         &mut self,
-        sender: AppUser,
-        group: &Pubkey,
-        mint: &Pubkey,
-        mint_authority: AppUser,
-        update_authority: Option<&Pubkey>,
-        max_size: u64,
-    ) -> TestResult<TransactionMetadata>;
-
-    fn token_2022_proxy_try_initialize_token_group(
-        &mut self,
+        target: Target,
         sender: AppUser,
         group: &Pubkey,
         mint: &Pubkey,
@@ -37,15 +35,7 @@ pub trait Token2022TokenGroupExtension {
 
     fn token_2022_try_update_group_max_size(
         &mut self,
-        sender: AppUser,
-        group: &Pubkey,
-        mint_authority: AppUser,
-        update_authority: &Pubkey,
-        max_size: u64,
-    ) -> TestResult<TransactionMetadata>;
-
-    fn token_2022_proxy_try_update_group_max_size(
-        &mut self,
+        target: Target,
         sender: AppUser,
         group: &Pubkey,
         mint_authority: AppUser,
@@ -55,14 +45,7 @@ pub trait Token2022TokenGroupExtension {
 
     fn token_2022_try_update_group_authority(
         &mut self,
-        sender: AppUser,
-        group: &Pubkey,
-        current_authority: &Pubkey,
-        new_authority: Option<&Pubkey>,
-    ) -> TestResult<TransactionMetadata>;
-
-    fn token_2022_proxy_try_update_group_authority(
-        &mut self,
+        target: Target,
         sender: AppUser,
         group: &Pubkey,
         current_authority: &Pubkey,
@@ -71,6 +54,7 @@ pub trait Token2022TokenGroupExtension {
 
     fn token_2022_try_initialize_member(
         &mut self,
+        target: Target,
         sender: AppUser,
         group: &Pubkey,
         group_update_authority: &Keypair,
@@ -79,97 +63,23 @@ pub trait Token2022TokenGroupExtension {
         member_mint_authority: &Keypair,
     ) -> TestResult<TransactionMetadata>;
 
-    fn token_2022_proxy_try_initialize_member(
-        &mut self,
-        sender: AppUser,
-        group: &Pubkey,
-        group_update_authority: &Keypair,
-        member: &Pubkey,
-        member_mint: &Pubkey,
-        member_mint_authority: &Keypair,
-    ) -> TestResult<TransactionMetadata>;
-
-    fn token_2022_query_token_group_state(
+    fn token_2022_query_token_group(
         &self,
+        target: Target,
         group: &Pubkey,
-    ) -> TestResult<spl_token_group_interface::state::TokenGroup>;
+    ) -> TestResult<TokenGroup>;
 
-    fn token_2022_proxy_query_token_group_state(
+    fn token_2022_query_token_group_member(
         &self,
-        group: &Pubkey,
-    ) -> TestResult<spl_token_group_interface::state::TokenGroup>;
-
-    fn token_2022_query_token_group_member_state(
-        &self,
+        target: Target,
         mint: &Pubkey,
-    ) -> TestResult<spl_token_group_interface::state::TokenGroupMember>;
-
-    fn token_2022_proxy_query_token_group_member_state(
-        &self,
-        mint: &Pubkey,
-    ) -> TestResult<spl_token_group_interface::state::TokenGroupMember>;
+    ) -> TestResult<TokenGroupMember>;
 }
 
 impl Token2022TokenGroupExtension for App {
     fn token_2022_try_initialize_token_group(
         &mut self,
-        sender: AppUser,
-        group: &Pubkey,
-        mint: &Pubkey,
-        mint_authority: AppUser,
-        update_authority: Option<&Pubkey>,
-        max_size: u64,
-    ) -> TestResult<TransactionMetadata> {
-        let ProgramId {
-            token_2022_program, ..
-        } = self.program_id;
-
-        let signers = &[&sender.keypair(), &mint_authority.keypair()];
-
-        let lamports = self
-            .litesvm
-            .get_sysvar::<solana_program::sysvar::rent::Rent>()
-            .minimum_balance(max_size as usize);
-        self.transfer_sol(sender, &pin_to_sol_pubkey(&mint), lamports)?;
-
-        let ix = spl_token_group_interface::instruction::initialize_group(
-            &token_2022_program.to_bytes().into(),
-            &pin_pubkey_to_addr(group),
-            &pin_pubkey_to_addr(mint),
-            &mint_authority.pubkey().to_bytes().into(),
-            update_authority.map(pin_pubkey_to_addr),
-            max_size,
-        );
-
-        // discriminator 121, 113, 108, 39, 54, 51, 0, 4
-        // println!("update_authority: \n{:?}\n", update_authority);
-        // println!("max_size: \n{:?}\n", max_size);
-        // println!("initialize_token_group: \n{:?}\n", ix.data);
-
-        let ix_legacy = solana_instruction::Instruction {
-            program_id: addr_to_sol_pubkey(&ix.program_id),
-            accounts: ix
-                .accounts
-                .into_iter()
-                .map(|x| solana_instruction::AccountMeta {
-                    pubkey: addr_to_sol_pubkey(&x.pubkey),
-                    is_signer: x.is_signer,
-                    is_writable: x.is_writable,
-                })
-                .collect(),
-            data: ix.data,
-        };
-
-        send_tx(
-            &mut self.litesvm,
-            &[ix_legacy],
-            signers,
-            self.is_log_displayed,
-        )
-    }
-
-    fn token_2022_proxy_try_initialize_token_group(
-        &mut self,
+        target: Target,
         sender: AppUser,
         group: &Pubkey,
         mint: &Pubkey,
@@ -200,14 +110,13 @@ impl Token2022TokenGroupExtension for App {
             max_size,
         );
 
-        // required by runtime to validate programs
         let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
             token_2022_program,
             false,
         )];
 
-        let ix_legacy = solana_instruction::Instruction {
-            program_id: token_2022_proxy,
+        let mut ix_legacy = solana_instruction::Instruction {
+            program_id: addr_to_sol_pubkey(&ix.program_id),
             accounts: ix
                 .accounts
                 .into_iter()
@@ -216,10 +125,14 @@ impl Token2022TokenGroupExtension for App {
                     is_signer: x.is_signer,
                     is_writable: x.is_writable,
                 })
-                .chain(additional_accounts.into_iter())
                 .collect(),
             data: ix.data,
         };
+
+        if let Target::Proxy = target {
+            ix_legacy.program_id = token_2022_proxy;
+            ix_legacy.accounts.extend_from_slice(&additional_accounts);
+        }
 
         send_tx(
             &mut self.litesvm,
@@ -231,6 +144,7 @@ impl Token2022TokenGroupExtension for App {
 
     fn token_2022_try_update_group_max_size(
         &mut self,
+        target: Target,
         sender: AppUser,
         group: &Pubkey,
         mint_authority: AppUser,
@@ -238,16 +152,12 @@ impl Token2022TokenGroupExtension for App {
         max_size: u64,
     ) -> TestResult<TransactionMetadata> {
         let ProgramId {
-            token_2022_program, ..
+            token_2022_program,
+            token_2022_proxy,
+            ..
         } = self.program_id;
 
         let signers = &[&sender.keypair(), &mint_authority.keypair()];
-
-        // let lamports = self
-        //     .litesvm
-        //     .get_sysvar::<solana_program::sysvar::rent::Rent>()
-        //     .minimum_balance(max_size as usize);
-        //  self.transfer_sol(sender, &pin_to_sol_pubkey(&mint), lamports)?;
 
         let ix = spl_token_group_interface::instruction::update_group_max_size(
             &token_2022_program.to_bytes().into(),
@@ -256,11 +166,12 @@ impl Token2022TokenGroupExtension for App {
             max_size,
         );
 
-        // discriminator 108, 37, 171, 143, 248, 30, 18, 110
-        // println!("max_size: \n{:?}\n", max_size);
-        // println!("update_group_max_size: \n{:?}\n", ix.data);
+        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
+            token_2022_program,
+            false,
+        )];
 
-        let ix_legacy = solana_instruction::Instruction {
+        let mut ix_legacy = solana_instruction::Instruction {
             program_id: addr_to_sol_pubkey(&ix.program_id),
             accounts: ix
                 .accounts
@@ -274,57 +185,10 @@ impl Token2022TokenGroupExtension for App {
             data: ix.data,
         };
 
-        send_tx(
-            &mut self.litesvm,
-            &[ix_legacy],
-            signers,
-            self.is_log_displayed,
-        )
-    }
-
-    fn token_2022_proxy_try_update_group_max_size(
-        &mut self,
-        sender: AppUser,
-        group: &Pubkey,
-        mint_authority: AppUser,
-        update_authority: &Pubkey,
-        max_size: u64,
-    ) -> TestResult<TransactionMetadata> {
-        let ProgramId {
-            token_2022_proxy,
-            token_2022_program,
-            ..
-        } = self.program_id;
-
-        let signers = &[&sender.keypair(), &mint_authority.keypair()];
-
-        let ix = spl_token_group_interface::instruction::update_group_max_size(
-            &token_2022_program.to_bytes().into(),
-            &pin_pubkey_to_addr(group),
-            &pin_pubkey_to_addr(update_authority),
-            max_size,
-        );
-
-        // required by runtime to validate programs
-        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
-            token_2022_program,
-            false,
-        )];
-
-        let ix_legacy = solana_instruction::Instruction {
-            program_id: token_2022_proxy,
-            accounts: ix
-                .accounts
-                .into_iter()
-                .map(|x| solana_instruction::AccountMeta {
-                    pubkey: addr_to_sol_pubkey(&x.pubkey),
-                    is_signer: x.is_signer,
-                    is_writable: x.is_writable,
-                })
-                .chain(additional_accounts.into_iter())
-                .collect(),
-            data: ix.data,
-        };
+        if let Target::Proxy = target {
+            ix_legacy.program_id = token_2022_proxy;
+            ix_legacy.accounts.extend_from_slice(&additional_accounts);
+        }
 
         send_tx(
             &mut self.litesvm,
@@ -336,13 +200,16 @@ impl Token2022TokenGroupExtension for App {
 
     fn token_2022_try_update_group_authority(
         &mut self,
+        target: Target,
         sender: AppUser,
         group: &Pubkey,
         current_authority: &Pubkey,
         new_authority: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata> {
         let ProgramId {
-            token_2022_program, ..
+            token_2022_program,
+            token_2022_proxy,
+            ..
         } = self.program_id;
 
         let signers = &[&sender.keypair()];
@@ -354,11 +221,12 @@ impl Token2022TokenGroupExtension for App {
             new_authority.map(pin_pubkey_to_addr),
         );
 
-        // discriminator 161, 105, 88, 1, 237, 221, 216, 203
-        // println!("new_authority: \n{:?}\n", new_authority);
-        // println!("update_group_authority: \n{:?}\n", ix.data);
+        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
+            token_2022_program,
+            false,
+        )];
 
-        let ix_legacy = solana_instruction::Instruction {
+        let mut ix_legacy = solana_instruction::Instruction {
             program_id: addr_to_sol_pubkey(&ix.program_id),
             accounts: ix
                 .accounts
@@ -372,56 +240,10 @@ impl Token2022TokenGroupExtension for App {
             data: ix.data,
         };
 
-        send_tx(
-            &mut self.litesvm,
-            &[ix_legacy],
-            signers,
-            self.is_log_displayed,
-        )
-    }
-
-    fn token_2022_proxy_try_update_group_authority(
-        &mut self,
-        sender: AppUser,
-        group: &Pubkey,
-        current_authority: &Pubkey,
-        new_authority: Option<&Pubkey>,
-    ) -> TestResult<TransactionMetadata> {
-        let ProgramId {
-            token_2022_proxy,
-            token_2022_program,
-            ..
-        } = self.program_id;
-
-        let signers = &[&sender.keypair()];
-
-        let ix = spl_token_group_interface::instruction::update_group_authority(
-            &token_2022_program.to_bytes().into(),
-            &pin_pubkey_to_addr(group),
-            &pin_pubkey_to_addr(current_authority),
-            new_authority.map(pin_pubkey_to_addr),
-        );
-
-        // required by runtime to validate programs
-        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
-            token_2022_program,
-            false,
-        )];
-
-        let ix_legacy = solana_instruction::Instruction {
-            program_id: token_2022_proxy,
-            accounts: ix
-                .accounts
-                .into_iter()
-                .map(|x| solana_instruction::AccountMeta {
-                    pubkey: addr_to_sol_pubkey(&x.pubkey),
-                    is_signer: x.is_signer,
-                    is_writable: x.is_writable,
-                })
-                .chain(additional_accounts.into_iter())
-                .collect(),
-            data: ix.data,
-        };
+        if let Target::Proxy = target {
+            ix_legacy.program_id = token_2022_proxy;
+            ix_legacy.accounts.extend_from_slice(&additional_accounts);
+        }
 
         send_tx(
             &mut self.litesvm,
@@ -433,6 +255,7 @@ impl Token2022TokenGroupExtension for App {
 
     fn token_2022_try_initialize_member(
         &mut self,
+        target: Target,
         sender: AppUser,
         group: &Pubkey,
         group_update_authority: &Keypair,
@@ -441,8 +264,8 @@ impl Token2022TokenGroupExtension for App {
         member_mint_authority: &Keypair,
     ) -> TestResult<TransactionMetadata> {
         let ProgramId {
-            token_program,
             token_2022_program,
+            token_2022_proxy,
             ..
         } = self.program_id;
 
@@ -461,10 +284,12 @@ impl Token2022TokenGroupExtension for App {
             &group_update_authority.pubkey().to_bytes().into(),
         );
 
-        // discriminator 152, 32, 222, 176, 223, 237, 116, 134
-        // println!("initialize_member: \n{:?}\n", ix.data);
+        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
+            token_2022_program,
+            false,
+        )];
 
-        let ix_legacy = solana_instruction::Instruction {
+        let mut ix_legacy = solana_instruction::Instruction {
             program_id: addr_to_sol_pubkey(&ix.program_id),
             accounts: ix
                 .accounts
@@ -478,6 +303,11 @@ impl Token2022TokenGroupExtension for App {
             data: ix.data,
         };
 
+        if let Target::Proxy = target {
+            ix_legacy.program_id = token_2022_proxy;
+            ix_legacy.accounts.extend_from_slice(&additional_accounts);
+        }
+
         send_tx(
             &mut self.litesvm,
             &[ix_legacy],
@@ -486,154 +316,80 @@ impl Token2022TokenGroupExtension for App {
         )
     }
 
-    fn token_2022_proxy_try_initialize_member(
-        &mut self,
-        sender: AppUser,
+    fn token_2022_query_token_group(
+        &self,
+        target: Target,
         group: &Pubkey,
-        group_update_authority: &Keypair,
-        member: &Pubkey,
-        member_mint: &Pubkey,
-        member_mint_authority: &Keypair,
-    ) -> TestResult<TransactionMetadata> {
-        let ProgramId {
-            token_2022_proxy,
-            token_program,
-            token_2022_program,
-            ..
-        } = self.program_id;
+    ) -> TestResult<TokenGroup> {
+        let data = &get_account_data(self, group)?;
 
-        let signers = &[
-            &sender.keypair(),
-            member_mint_authority,
-            group_update_authority,
-        ];
+        match target {
+            Target::Spl => {
+                // Parse the mint account with extensions
+                let mint_with_extensions =
+                    StateWithExtensions::<Mint>::unpack(data).map_err(TestError::from_raw_error)?;
 
-        let ix = spl_token_group_interface::instruction::initialize_member(
-            &token_2022_program.to_bytes().into(),
-            &pin_pubkey_to_addr(member),
-            &pin_pubkey_to_addr(member_mint),
-            &member_mint_authority.pubkey().to_bytes().into(),
-            &pin_pubkey_to_addr(group),
-            &group_update_authority.pubkey().to_bytes().into(),
-        );
+                // Get extension bytes
+                let extension_bytes = mint_with_extensions
+                    .get_extension_bytes::<TokenGroup>()
+                    .map_err(TestError::from_raw_error)?;
 
-        // required by runtime to validate programs
-        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
-            token_program,
-            false,
-        )];
+                // Deserialize extension bytes
+                pod_from_bytes::<TokenGroup>(extension_bytes)
+                    .map(|&x| x)
+                    .map_err(TestError::from_raw_error)
+            }
+            Target::Proxy => {
+                use pinocchio_token_2022::instructions::extension::token_group::states::TokenGroup as PinocchioTokenGroup;
 
-        let ix_legacy = solana_instruction::Instruction {
-            program_id: token_2022_proxy,
-            accounts: ix
-                .accounts
-                .into_iter()
-                .map(|x| solana_instruction::AccountMeta {
-                    pubkey: addr_to_sol_pubkey(&x.pubkey),
-                    is_signer: x.is_signer,
-                    is_writable: x.is_writable,
+                let state =
+                    PinocchioTokenGroup::from_bytes(data).map_err(TestError::from_raw_error)?;
+
+                Ok(TokenGroup {
+                    update_authority: to_optional_non_zero_pubkey(state.update_authority()),
+                    mint: pin_pubkey_to_addr(state.mint()),
+                    size: state.size().into(),
+                    max_size: state.max_size().into(),
                 })
-                .chain(additional_accounts.into_iter())
-                .collect(),
-            data: ix.data,
-        };
-
-        send_tx(
-            &mut self.litesvm,
-            &[ix_legacy],
-            signers,
-            self.is_log_displayed,
-        )
+            }
+        }
     }
 
-    fn token_2022_query_token_group_state(
+    fn token_2022_query_token_group_member(
         &self,
-        group: &Pubkey,
-    ) -> TestResult<spl_token_group_interface::state::TokenGroup> {
-        let account = self
-            .litesvm
-            .get_account(&pin_to_sol_pubkey(group))
-            .ok_or(TestError::from_raw_error("The account isn't found"))?;
-
-        // Parse the mint account with extensions
-        let mint_with_extensions = spl_token_2022_interface::extension::StateWithExtensions::<
-            spl_token_2022_interface::state::Mint,
-        >::unpack(&account.data)
-        .map_err(TestError::from_raw_error)?;
-
-        // Get extension bytes
-        let extension_bytes = mint_with_extensions
-            .get_extension_bytes::<spl_token_group_interface::state::TokenGroup>()
-            .map_err(TestError::from_raw_error)?;
-
-        // Deserialize extension bytes
-        pod_from_bytes::<spl_token_group_interface::state::TokenGroup>(extension_bytes)
-            .map(|&x| x)
-            .map_err(TestError::from_raw_error)
-    }
-
-    fn token_2022_proxy_query_token_group_state(
-        &self,
-        group: &Pubkey,
-    ) -> TestResult<spl_token_group_interface::state::TokenGroup> {
-        let data = &self
-            .litesvm
-            .get_account(&pin_to_sol_pubkey(group))
-            .map(|x| x.data)
-            .ok_or(TestError::from_raw_error("The state isn't found"))?;
-
-        let state = pinocchio_token_2022::instructions::extension::token_group::states::TokenGroup::from_bytes(data).map_err(TestError::from_raw_error)?;
-
-        Ok(spl_token_group_interface::state::TokenGroup {
-            update_authority: to_optional_non_zero_pubkey(state.update_authority()),
-            mint: pin_pubkey_to_addr(state.mint()),
-            size: state.size().into(),
-            max_size: state.max_size().into(),
-        })
-    }
-
-    fn token_2022_query_token_group_member_state(
-        &self,
+        target: Target,
         mint: &Pubkey,
-    ) -> TestResult<spl_token_group_interface::state::TokenGroupMember> {
-        let account = self
-            .litesvm
-            .get_account(&pin_to_sol_pubkey(mint))
-            .ok_or(TestError::from_raw_error("The account isn't found"))?;
+    ) -> TestResult<TokenGroupMember> {
+        let data = &get_account_data(self, mint)?;
 
-        // Parse the mint account with extensions
-        let mint_with_extensions = spl_token_2022_interface::extension::StateWithExtensions::<
-            spl_token_2022_interface::state::Mint,
-        >::unpack(&account.data)
-        .map_err(TestError::from_raw_error)?;
+        match target {
+            Target::Spl => {
+                // Parse the mint account with extensions
+                let mint_with_extensions =
+                    StateWithExtensions::<Mint>::unpack(data).map_err(TestError::from_raw_error)?;
 
-        // Get extension bytes
-        let extension_bytes = mint_with_extensions
-            .get_extension_bytes::<spl_token_group_interface::state::TokenGroupMember>()
-            .map_err(TestError::from_raw_error)?;
+                // Get extension bytes
+                let extension_bytes = mint_with_extensions
+                    .get_extension_bytes::<TokenGroupMember>()
+                    .map_err(TestError::from_raw_error)?;
 
-        // Deserialize extension bytes
-        pod_from_bytes::<spl_token_group_interface::state::TokenGroupMember>(extension_bytes)
-            .map(|&x| x)
-            .map_err(TestError::from_raw_error)
-    }
+                // Deserialize extension bytes
+                pod_from_bytes::<TokenGroupMember>(extension_bytes)
+                    .map(|&x| x)
+                    .map_err(TestError::from_raw_error)
+            }
+            Target::Proxy => {
+                use pinocchio_token_2022::instructions::extension::token_group::states::TokenGroupMember as PinocchioTokenGroupMember;
 
-    fn token_2022_proxy_query_token_group_member_state(
-        &self,
-        mint: &Pubkey,
-    ) -> TestResult<spl_token_group_interface::state::TokenGroupMember> {
-        let data = &self
-            .litesvm
-            .get_account(&pin_to_sol_pubkey(mint))
-            .map(|x| x.data)
-            .ok_or(TestError::from_raw_error("The state isn't found"))?;
+                let state = PinocchioTokenGroupMember::from_bytes(data)
+                    .map_err(TestError::from_raw_error)?;
 
-        let state = pinocchio_token_2022::instructions::extension::token_group::states::TokenGroupMember::from_bytes(data).map_err(TestError::from_raw_error)?;
-
-        Ok(spl_token_group_interface::state::TokenGroupMember {
-            mint: pin_pubkey_to_addr(state.mint()),
-            group: pin_pubkey_to_addr(state.group()),
-            member_number: state.member_number().into(),
-        })
+                Ok(TokenGroupMember {
+                    mint: pin_pubkey_to_addr(state.mint()),
+                    group: pin_pubkey_to_addr(state.group()),
+                    member_number: state.member_number().into(),
+                })
+            }
+        }
     }
 }

@@ -7,7 +7,7 @@ use {
         },
         suite::{
             core::App,
-            types::{pin_pubkey_to_addr, AppUser, PinPubkey, TestResult},
+            types::{pin_pubkey_to_addr, AppUser, PinPubkey, Target, TestResult},
         },
     },
     pretty_assertions::assert_eq,
@@ -39,6 +39,7 @@ fn initialize_token_group() -> TestResult<()> {
     );
 
     app.token_2022_try_initialize_group_pointer(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         Some(&mint_authority.pubkey()),
@@ -46,6 +47,7 @@ fn initialize_token_group() -> TestResult<()> {
     )?;
 
     app.token_2022_try_initialize_mint(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         decimals,
@@ -54,6 +56,7 @@ fn initialize_token_group() -> TestResult<()> {
     )?;
 
     app.token_2022_try_initialize_token_group(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         mint_pubkey,
@@ -63,11 +66,12 @@ fn initialize_token_group() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_token_group_state(mint_pubkey)?,
+        app.token_2022_query_token_group(Target::Spl, mint_pubkey)?,
         token_group
     );
 
     app.token_2022_try_update_group_max_size(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         mint_authority,
@@ -76,6 +80,7 @@ fn initialize_token_group() -> TestResult<()> {
     )?;
 
     app.token_2022_try_update_group_authority(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         &mint_authority.pubkey(),
@@ -117,6 +122,7 @@ fn proxy_initialize_token_group() -> TestResult<()> {
     );
 
     app.token_2022_try_initialize_group_pointer(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         Some(&mint_authority.pubkey()),
@@ -124,6 +130,7 @@ fn proxy_initialize_token_group() -> TestResult<()> {
     )?;
 
     app.token_2022_try_initialize_mint(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         decimals,
@@ -133,7 +140,8 @@ fn proxy_initialize_token_group() -> TestResult<()> {
 
     // 2nd to run internal checks
     for _ in [0..=1] {
-        app.token_2022_proxy_try_initialize_token_group(
+        app.token_2022_try_initialize_token_group(
+            Target::Proxy,
             AppUser::Admin,
             mint_pubkey,
             mint_pubkey,
@@ -144,15 +152,16 @@ fn proxy_initialize_token_group() -> TestResult<()> {
     }
 
     assert_eq!(
-        app.token_2022_query_token_group_state(mint_pubkey)?,
+        app.token_2022_query_token_group(Target::Spl, mint_pubkey)?,
         token_group
     );
     assert_eq!(
-        app.token_2022_proxy_query_token_group_state(mint_pubkey)?,
+        app.token_2022_query_token_group(Target::Proxy, mint_pubkey)?,
         token_group
     );
 
-    app.token_2022_proxy_try_update_group_max_size(
+    app.token_2022_try_update_group_max_size(
+        Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
         mint_authority,
@@ -160,7 +169,8 @@ fn proxy_initialize_token_group() -> TestResult<()> {
         max_size,
     )?;
 
-    app.token_2022_proxy_try_update_group_authority(
+    app.token_2022_try_update_group_authority(
+        Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
         &mint_authority.pubkey(),

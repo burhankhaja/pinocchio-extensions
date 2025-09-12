@@ -5,8 +5,8 @@ use {
             get_token_account_balance, mint_tokens_to_account,
         },
         types::{
-            addr_to_sol_pubkey, AppAsset, AppCoin, AppToken, AppUser, GetDecimals, SolPubkey,
-            TestError, TestResult,
+            addr_to_sol_pubkey, pin_to_sol_pubkey, AppAsset, AppCoin, AppToken, AppUser,
+            GetDecimals, SolPubkey, TestError, TestResult,
         },
     },
     litesvm::{types::TransactionMetadata, LiteSVM},
@@ -315,6 +315,13 @@ fn upload_program(litesvm: &mut LiteSVM, program_name: &str, program_id: &Pubkey
 
 pub mod extension {
     use super::*;
+
+    pub fn get_account_data(app: &App, pubkey: &pinocchio::pubkey::Pubkey) -> TestResult<Vec<u8>> {
+        app.litesvm
+            .get_account(&pin_to_sol_pubkey(pubkey))
+            .map(|x| x.data)
+            .ok_or(TestError::from_raw_error("The account isn't found"))
+    }
 
     pub fn send_tx<S>(
         litesvm: &mut LiteSVM,

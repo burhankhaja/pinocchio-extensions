@@ -6,7 +6,7 @@ use {
         },
         suite::{
             core::App,
-            types::{pin_pubkey_to_addr, AppUser, PinPubkey, TestResult},
+            types::{pin_pubkey_to_addr, AppUser, PinPubkey, Target, TestResult},
         },
     },
     pretty_assertions::assert_eq,
@@ -35,6 +35,7 @@ fn initialize_group_pointer_with_default_authority() -> TestResult<()> {
     };
 
     app.token_2022_try_initialize_group_pointer(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         None,
@@ -42,6 +43,7 @@ fn initialize_group_pointer_with_default_authority() -> TestResult<()> {
     )?;
 
     app.token_2022_try_initialize_mint(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         decimals,
@@ -50,7 +52,7 @@ fn initialize_group_pointer_with_default_authority() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
         group_pointer
     );
 
@@ -76,7 +78,8 @@ fn proxy_initialize_group_pointer_with_default_authority() -> TestResult<()> {
         group_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
     };
 
-    app.token_2022_proxy_try_initialize_group_pointer(
+    app.token_2022_try_initialize_group_pointer(
+        Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
         None,
@@ -84,6 +87,7 @@ fn proxy_initialize_group_pointer_with_default_authority() -> TestResult<()> {
     )?;
 
     app.token_2022_try_initialize_mint(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         decimals,
@@ -92,11 +96,11 @@ fn proxy_initialize_group_pointer_with_default_authority() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
         group_pointer
     );
     assert_eq!(
-        app.token_2022_proxy_query_group_pointer_state(mint_pubkey)?,
+        app.token_2022_query_group_pointer(Target::Proxy, mint_pubkey)?,
         group_pointer
     );
 
@@ -123,6 +127,7 @@ fn initialize_and_update_group_pointer() -> TestResult<()> {
     };
 
     app.token_2022_try_initialize_group_pointer(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         Some(&mint_authority.pubkey()),
@@ -130,6 +135,7 @@ fn initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     app.token_2022_try_initialize_mint(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         decimals,
@@ -138,11 +144,12 @@ fn initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
         group_pointer
     );
 
     app.token_2022_try_update_group_pointer(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         &mint_authority.pubkey(),
@@ -150,7 +157,7 @@ fn initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
         GroupPointer {
             authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&mint_authority.pubkey())),
             group_address: OptionalNonZeroPubkey::default(),
@@ -179,7 +186,8 @@ fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
         group_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
     };
 
-    app.token_2022_proxy_try_initialize_group_pointer(
+    app.token_2022_try_initialize_group_pointer(
+        Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
         Some(&mint_authority.pubkey()),
@@ -187,6 +195,7 @@ fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     app.token_2022_try_initialize_mint(
+        Target::Spl,
         AppUser::Admin,
         mint_pubkey,
         decimals,
@@ -195,7 +204,8 @@ fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     // execute 2nd time to run internal checks
-    app.token_2022_proxy_try_initialize_group_pointer(
+    app.token_2022_try_initialize_group_pointer(
+        Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
         Some(&mint_authority.pubkey()),
@@ -203,15 +213,16 @@ fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
         group_pointer
     );
     assert_eq!(
-        app.token_2022_proxy_query_group_pointer_state(mint_pubkey)?,
+        app.token_2022_query_group_pointer(Target::Proxy, mint_pubkey)?,
         group_pointer
     );
 
-    app.token_2022_proxy_try_update_group_pointer(
+    app.token_2022_try_update_group_pointer(
+        Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
         &mint_authority.pubkey(),
@@ -219,7 +230,7 @@ fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer_state(mint_pubkey)?,
+        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
         GroupPointer {
             authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&mint_authority.pubkey())),
             group_address: OptionalNonZeroPubkey::default(),

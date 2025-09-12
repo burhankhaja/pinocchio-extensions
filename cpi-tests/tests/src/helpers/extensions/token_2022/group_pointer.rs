@@ -1,27 +1,26 @@
 use {
     crate::helpers::suite::{
-        core::{extension::send_tx, App, ProgramId},
+        core::{
+            extension::{get_account_data, send_tx},
+            App, ProgramId,
+        },
         types::{
-            addr_to_sol_pubkey, pin_pubkey_to_addr, pin_to_sol_pubkey, to_optional_non_zero_pubkey,
-            AppUser, SolPubkey, TestError, TestResult,
+            addr_to_sol_pubkey, pin_pubkey_to_addr, to_optional_non_zero_pubkey, AppUser,
+            SolPubkey, Target, TestError, TestResult,
         },
     },
     litesvm::types::TransactionMetadata,
     pinocchio::pubkey::Pubkey,
-    spl_token_2022_interface::extension::BaseStateWithExtensions,
+    spl_token_2022_interface::{
+        extension::{group_pointer::GroupPointer, BaseStateWithExtensions, StateWithExtensions},
+        state::Mint,
+    },
 };
 
 pub trait Token2022GroupPointerExtension {
     fn token_2022_try_initialize_group_pointer(
         &mut self,
-        sender: AppUser,
-        mint: &Pubkey,
-        authority: Option<&Pubkey>,
-        group_address: Option<&Pubkey>,
-    ) -> TestResult<TransactionMetadata>;
-
-    fn token_2022_proxy_try_initialize_group_pointer(
-        &mut self,
+        target: Target,
         sender: AppUser,
         mint: &Pubkey,
         authority: Option<&Pubkey>,
@@ -30,83 +29,29 @@ pub trait Token2022GroupPointerExtension {
 
     fn token_2022_try_update_group_pointer(
         &mut self,
+        target: Target,
         sender: AppUser,
         mint: &Pubkey,
         authority: &Pubkey,
         group_address: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata>;
 
-    fn token_2022_proxy_try_update_group_pointer(
-        &mut self,
-        sender: AppUser,
-        mint: &Pubkey,
-        authority: &Pubkey,
-        group_address: Option<&Pubkey>,
-    ) -> TestResult<TransactionMetadata>;
-
-    fn token_2022_query_group_pointer_state(
+    fn token_2022_query_group_pointer(
         &self,
+        target: Target,
         mint: &Pubkey,
-    ) -> TestResult<spl_token_2022_interface::extension::group_pointer::GroupPointer>;
-
-    fn token_2022_proxy_query_group_pointer_state(
-        &self,
-        mint: &Pubkey,
-    ) -> TestResult<spl_token_2022_interface::extension::group_pointer::GroupPointer>;
+    ) -> TestResult<GroupPointer>;
 }
 
 impl Token2022GroupPointerExtension for App {
     fn token_2022_try_initialize_group_pointer(
         &mut self,
+        target: Target,
         sender: AppUser,
         mint: &Pubkey,
         authority: Option<&Pubkey>,
         group_address: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata> {
-        let ProgramId {
-            token_2022_program, ..
-        } = self.program_id;
-
-        let signers = &[&sender.keypair()];
-
-        let ix = spl_token_2022_interface::extension::group_pointer::instruction::initialize(
-            &token_2022_program.to_bytes().into(),
-            &pin_pubkey_to_addr(mint),
-            authority.map(pin_pubkey_to_addr),
-            group_address.map(pin_pubkey_to_addr),
-        )
-        .map_err(TestError::from_raw_error)?;
-
-        let ix_legacy = solana_instruction::Instruction {
-            program_id: addr_to_sol_pubkey(&ix.program_id),
-            accounts: ix
-                .accounts
-                .into_iter()
-                .map(|x| solana_instruction::AccountMeta {
-                    pubkey: addr_to_sol_pubkey(&x.pubkey),
-                    is_signer: x.is_signer,
-                    is_writable: x.is_writable,
-                })
-                .collect(),
-            data: ix.data,
-        };
-
-        send_tx(
-            &mut self.litesvm,
-            &[ix_legacy],
-            signers,
-            self.is_log_displayed,
-        )
-    }
-
-    fn token_2022_proxy_try_initialize_group_pointer(
-        &mut self,
-        sender: AppUser,
-        mint: &Pubkey,
-        authority: Option<&Pubkey>,
-        group_address: Option<&Pubkey>,
-    ) -> TestResult<TransactionMetadata> {
-        // programs
         let ProgramId {
             token_2022_program,
             token_2022_proxy,
@@ -123,14 +68,13 @@ impl Token2022GroupPointerExtension for App {
         )
         .map_err(TestError::from_raw_error)?;
 
-        // required by runtime to validate programs
         let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
             token_2022_program,
             false,
         )];
 
-        let ix_legacy = solana_instruction::Instruction {
-            program_id: token_2022_proxy,
+        let mut ix_legacy = solana_instruction::Instruction {
+            program_id: addr_to_sol_pubkey(&ix.program_id),
             accounts: ix
                 .accounts
                 .into_iter()
@@ -139,10 +83,14 @@ impl Token2022GroupPointerExtension for App {
                     is_signer: x.is_signer,
                     is_writable: x.is_writable,
                 })
-                .chain(additional_accounts.into_iter())
                 .collect(),
             data: ix.data,
         };
+
+        if let Target::Proxy = target {
+            ix_legacy.program_id = token_2022_proxy;
+            ix_legacy.accounts.extend_from_slice(&additional_accounts);
+        }
 
         send_tx(
             &mut self.litesvm,
@@ -154,57 +102,12 @@ impl Token2022GroupPointerExtension for App {
 
     fn token_2022_try_update_group_pointer(
         &mut self,
+        target: Target,
         sender: AppUser,
         mint: &Pubkey,
         authority: &Pubkey,
         group_address: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata> {
-        let ProgramId {
-            token_2022_program, ..
-        } = self.program_id;
-
-        let signers = &[&sender.keypair()];
-        let authority_signers = &[&pin_pubkey_to_addr(&sender.pubkey().to_bytes())];
-
-        let ix = spl_token_2022_interface::extension::group_pointer::instruction::update(
-            &token_2022_program.to_bytes().into(),
-            &pin_pubkey_to_addr(mint),
-            &pin_pubkey_to_addr(authority),
-            authority_signers,
-            group_address.map(pin_pubkey_to_addr),
-        )
-        .map_err(TestError::from_raw_error)?;
-
-        let ix_legacy = solana_instruction::Instruction {
-            program_id: addr_to_sol_pubkey(&ix.program_id),
-            accounts: ix
-                .accounts
-                .into_iter()
-                .map(|x| solana_instruction::AccountMeta {
-                    pubkey: addr_to_sol_pubkey(&x.pubkey),
-                    is_signer: x.is_signer,
-                    is_writable: x.is_writable,
-                })
-                .collect(),
-            data: ix.data,
-        };
-
-        send_tx(
-            &mut self.litesvm,
-            &[ix_legacy],
-            signers,
-            self.is_log_displayed,
-        )
-    }
-
-    fn token_2022_proxy_try_update_group_pointer(
-        &mut self,
-        sender: AppUser,
-        mint: &Pubkey,
-        authority: &Pubkey,
-        group_address: Option<&Pubkey>,
-    ) -> TestResult<TransactionMetadata> {
-        // programs
         let ProgramId {
             token_2022_program,
             token_2022_proxy,
@@ -223,14 +126,13 @@ impl Token2022GroupPointerExtension for App {
         )
         .map_err(TestError::from_raw_error)?;
 
-        // required by runtime to validate programs
         let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
             token_2022_program,
             false,
         )];
 
-        let ix_legacy = solana_instruction::Instruction {
-            program_id: token_2022_proxy,
+        let mut ix_legacy = solana_instruction::Instruction {
+            program_id: addr_to_sol_pubkey(&ix.program_id),
             accounts: ix
                 .accounts
                 .into_iter()
@@ -239,10 +141,14 @@ impl Token2022GroupPointerExtension for App {
                     is_signer: x.is_signer,
                     is_writable: x.is_writable,
                 })
-                .chain(additional_accounts.into_iter())
                 .collect(),
             data: ix.data,
         };
+
+        if let Target::Proxy = target {
+            ix_legacy.program_id = token_2022_proxy;
+            ix_legacy.accounts.extend_from_slice(&additional_accounts);
+        }
 
         send_tx(
             &mut self.litesvm,
@@ -252,45 +158,36 @@ impl Token2022GroupPointerExtension for App {
         )
     }
 
-    fn token_2022_query_group_pointer_state(
+    fn token_2022_query_group_pointer(
         &self,
+        target: Target,
         mint: &Pubkey,
-    ) -> TestResult<spl_token_2022_interface::extension::group_pointer::GroupPointer> {
-        let account = self
-            .litesvm
-            .get_account(&pin_to_sol_pubkey(mint))
-            .ok_or(TestError::from_raw_error("The account isn't found"))?;
+    ) -> TestResult<GroupPointer> {
+        let data = &get_account_data(self, mint)?;
 
-        // Parse the mint account with extensions
-        let mint_with_extensions = spl_token_2022_interface::extension::StateWithExtensions::<
-            spl_token_2022_interface::state::Mint,
-        >::unpack(&account.data)
-        .map_err(TestError::from_raw_error)?;
+        match target {
+            Target::Spl => {
+                // parse the mint account with extensions
+                let mint_with_extensions =
+                    StateWithExtensions::<Mint>::unpack(data).map_err(TestError::from_raw_error)?;
 
-        // Get the GroupPointer extension
-        mint_with_extensions
-            .get_extension::<spl_token_2022_interface::extension::group_pointer::GroupPointer>()
-            .map(|&x| x)
-            .map_err(TestError::from_raw_error)
-    }
+                // get the GroupPointer extension
+                mint_with_extensions
+                    .get_extension::<GroupPointer>()
+                    .map(|&x| x)
+                    .map_err(TestError::from_raw_error)
+            }
+            Target::Proxy => {
+                use pinocchio_token_2022::instructions::extension::group_pointer::states::GroupPointer as PinocchioGroupPointer;
 
-    fn token_2022_proxy_query_group_pointer_state(
-        &self,
-        mint: &Pubkey,
-    ) -> TestResult<spl_token_2022_interface::extension::group_pointer::GroupPointer> {
-        let data = &self
-            .litesvm
-            .get_account(&pin_to_sol_pubkey(mint))
-            .map(|x| x.data)
-            .ok_or(TestError::from_raw_error("The state isn't found"))?;
+                let state =
+                    PinocchioGroupPointer::from_bytes(data).map_err(TestError::from_raw_error)?;
 
-        let state = pinocchio_token_2022::instructions::extension::group_pointer::states::GroupPointer::from_bytes(data).map_err(TestError::from_raw_error)?;
-
-        Ok(
-            spl_token_2022_interface::extension::group_pointer::GroupPointer {
-                authority: to_optional_non_zero_pubkey(state.authority()),
-                group_address: to_optional_non_zero_pubkey(state.group_address()),
-            },
-        )
+                Ok(GroupPointer {
+                    authority: to_optional_non_zero_pubkey(state.authority()),
+                    group_address: to_optional_non_zero_pubkey(state.group_address()),
+                })
+            }
+        }
     }
 }
