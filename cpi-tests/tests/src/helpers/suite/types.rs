@@ -278,6 +278,11 @@ impl TestError {
     }
 }
 
+pub enum Target {
+    Spl,
+    Proxy,
+}
+
 pub fn sol_to_pin_pubkey(sol_pubkey: &solana_pubkey::Pubkey) -> pinocchio::pubkey::Pubkey {
     pinocchio::pubkey::Pubkey::from(sol_pubkey.to_bytes())
 }
