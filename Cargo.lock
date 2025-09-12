@@ -5316,6 +5316,7 @@ dependencies = [
  "solana-program-option 3.0.0",
  "spl-pod 0.7.1",
  "spl-token-2022-interface",
+ "spl-token-group-interface 0.7.1",
 ]
 
 [[package]]

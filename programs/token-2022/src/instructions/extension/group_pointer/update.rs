@@ -1,8 +1,10 @@
 use {
     crate::instructions::{
-        extension::group_pointer::constants::{
-            offset_group_pointer_update as OFFSET, ExtensionDiscriminator,
-            InstructionDiscriminatorGroupPointer,
+        extension::{
+            group_pointer::constants::{
+                offset_group_pointer_update as OFFSET, InstructionDiscriminatorGroupPointer,
+            },
+            ExtensionDiscriminator,
         },
         MAX_MULTISIG_SIGNERS,
     },

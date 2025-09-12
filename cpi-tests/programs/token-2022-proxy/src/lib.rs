@@ -10,6 +10,10 @@ use {
         extension::group_pointer::instruction::GroupPointerInstruction,
         instruction::{decode_instruction_type, TokenInstruction},
     },
+    spl_token_group_interface::instruction::{
+        InitializeGroup, InitializeMember, TokenGroupInstruction, UpdateGroupAuthority,
+        UpdateGroupMaxSize,
+    },
 };
 
 pub mod helpers;
@@ -25,34 +29,61 @@ pub fn process_instruction(
     accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> ProgramResult {
-    let token_instruction = TokenInstruction::unpack(instruction_data)
-        .map_err(|_| ProgramError::InvalidInstructionData)?;
+    match TokenInstruction::unpack(instruction_data) {
+        // try to match TokenInstruction
+        Ok(token_instruction) => {
+            match token_instruction {
+                TokenInstruction::InitializeMint {
+                    decimals,
+                    mint_authority,
+                    freeze_authority,
+                } => i::initialize_mint(accounts, decimals, mint_authority, freeze_authority),
 
-    match token_instruction {
-        TokenInstruction::InitializeMint {
-            decimals,
-            mint_authority,
-            freeze_authority,
-        } => i::initialize_mint(accounts, decimals, mint_authority, freeze_authority),
+                TokenInstruction::GroupPointerExtension => {
+                    // Remove extension discriminator
+                    let instruction_data = &instruction_data[1..];
 
-        TokenInstruction::GroupPointerExtension => {
-            // Remove extension discriminator
-            let instruction_data = &instruction_data[1..];
+                    let group_pointer_ix: GroupPointerInstruction =
+                        decode_instruction_type(instruction_data)
+                            .map_err(|_| ProgramError::InvalidInstructionData)?;
 
-            let group_pointer_ix: GroupPointerInstruction =
-                decode_instruction_type(instruction_data)
-                    .map_err(|_| ProgramError::InvalidInstructionData)?;
-
-            match group_pointer_ix {
-                GroupPointerInstruction::Initialize => {
-                    i::group_pointer::initialize(accounts, instruction_data)
+                    match group_pointer_ix {
+                        GroupPointerInstruction::Initialize => {
+                            i::group_pointer::initialize(accounts, instruction_data)
+                        }
+                        GroupPointerInstruction::Update => {
+                            i::group_pointer::update(accounts, instruction_data)
+                        }
+                    }
                 }
-                GroupPointerInstruction::Update => {
-                    i::group_pointer::update(accounts, instruction_data)
-                }
+
+                _ => Err(ProgramError::InvalidInstructionData)?,
             }
         }
-
-        _ => Err(ProgramError::InvalidInstructionData)?,
+        Err(_) => {
+            // try to match TokenGroupInstruction
+            match TokenGroupInstruction::unpack(instruction_data) {
+                Ok(token_instruction) => match token_instruction {
+                    TokenGroupInstruction::InitializeGroup(InitializeGroup {
+                        update_authority,
+                        max_size,
+                    }) => {
+                        todo!()
+                    }
+                    TokenGroupInstruction::UpdateGroupMaxSize(UpdateGroupMaxSize { max_size }) => {
+                        todo!()
+                    }
+                    TokenGroupInstruction::UpdateGroupAuthority(UpdateGroupAuthority {
+                        new_authority,
+                    }) => {
+                        todo!()
+                    }
+                    TokenGroupInstruction::InitializeMember(InitializeMember) => {
+                        todo!()
+                    }
+                },
+                _ => Err(ProgramError::InvalidInstructionData)?,
+            }
+        }
     }
 }

@@ -13,7 +13,7 @@ use {
     pretty_assertions::assert_eq,
     solana_signer::Signer,
     spl_pod::optional_keys::OptionalNonZeroPubkey,
-    spl_token_2022_interface::extension::{group_pointer::GroupPointer, ExtensionType},
+    spl_token_2022_interface::extension::ExtensionType,
 };
 
 #[test]
@@ -67,6 +67,30 @@ fn initialize_token_group() -> TestResult<()> {
         token_group
     );
 
+    // app.token_2022_try_update_group_max_size(
+    //     AppUser::Admin,
+    //     mint_pubkey,
+    //     mint_authority,
+    //     &update_authority.to_bytes(),
+    //     max_size,
+    // )?;
+
+    // app.token_2022_try_update_group_authority(
+    //     AppUser::Admin,
+    //     mint_pubkey,
+    //     &mint_authority.pubkey(),
+    //     None,
+    // )?;
+
+    // app.token_2022_try_initialize_member(
+    //     AppUser::Admin,
+    //     mint_pubkey,
+    //     &AppUser::Admin.keypair(),
+    //     &AppUser::Bob.pubkey(),
+    //     &AppUser::Bob.pubkey(),
+    //     &AppUser::Bob.keypair(),
+    // )?;
+
     Ok(())
 }
 
@@ -107,19 +131,24 @@ fn proxy_initialize_token_group() -> TestResult<()> {
         freeze_authority.as_ref(),
     )?;
 
-    // app.token_2022_try_initialize_token_group(
-    //     AppUser::Admin,
-    //     mint_pubkey,
-    //     mint_pubkey,
-    //     mint_authority,
-    //     Some(&update_authority.to_bytes()),
-    //     max_size,
-    // )?;
+    // TODO: replace
+    app.token_2022_try_initialize_token_group(
+        AppUser::Admin,
+        mint_pubkey,
+        mint_pubkey,
+        mint_authority,
+        Some(&update_authority.to_bytes()),
+        max_size,
+    )?;
 
-    // assert_eq!(
-    //     app.token_2022_query_token_group_state(mint_pubkey)?,
-    //     token_group
-    // );
+    assert_eq!(
+        app.token_2022_query_token_group_state(mint_pubkey)?,
+        token_group
+    );
+    assert_eq!(
+        app.token_2022_proxy_query_token_group_state(mint_pubkey)?,
+        token_group
+    );
 
     Ok(())
 }

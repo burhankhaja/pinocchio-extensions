@@ -1,17 +1,12 @@
 #[repr(u8)]
-pub enum ExtensionDiscriminator {
-    GroupPointer = 40,
-}
-
-#[repr(u8)]
 pub enum InstructionDiscriminatorGroupPointer {
     Initialize = 0,
     Update = 1,
 }
 
 /// Instruction data layout:
-/// - [0]                        : GroupPointerExtension discriminator (1 byte)
-/// - [1]                        : Initialize discriminator (1 byte)
+/// - [0]                        : Extension discriminator (1 byte)
+/// - [1]                        : Instruction discriminator (1 byte)
 /// - [2..34]                    : authority pubkey (32 bytes)
 /// - [34..66]                   : group_address pubkey (32 bytes)
 pub mod offset_group_pointer_initialize {
@@ -22,8 +17,8 @@ pub mod offset_group_pointer_initialize {
 }
 
 /// Instruction data layout:
-/// -  [0]: instruction GroupPointerExtension discriminator (1 byte, u8)
-/// -  [1]: instruction Update discriminator (1 byte, u8)
+/// -  [0]: Extension discriminator (1 byte, u8)
+/// -  [1]: Instruction discriminator (1 byte, u8)
 /// -  [2..34]: group_address pubkey (optional, 32 bytes)
 pub mod offset_group_pointer_update {
     pub const START: u8 = 2;
