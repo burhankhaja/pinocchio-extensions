@@ -7,7 +7,10 @@ use {
     },
     pinocchio_pubkey::declare_id,
     spl_token_2022_interface::{
-        extension::group_pointer::instruction::GroupPointerInstruction,
+        extension::{
+            group_member_pointer::instruction::GroupMemberPointerInstruction,
+            group_pointer::instruction::GroupPointerInstruction,
+        },
         instruction::{decode_instruction_type, TokenInstruction},
     },
     spl_token_group_interface::instruction::{
@@ -40,19 +43,32 @@ pub fn process_instruction(
                 } => i::initialize_mint(accounts, decimals, mint_authority, freeze_authority),
 
                 TokenInstruction::GroupPointerExtension => {
-                    // Remove extension discriminator
-                    let instruction_data = &instruction_data[1..];
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: GroupPointerInstruction = decode_instruction_type(instruction_data)
+                        .map_err(|_| ProgramError::InvalidInstructionData)?;
 
-                    let group_pointer_ix: GroupPointerInstruction =
-                        decode_instruction_type(instruction_data)
-                            .map_err(|_| ProgramError::InvalidInstructionData)?;
-
-                    match group_pointer_ix {
+                    match ix {
                         GroupPointerInstruction::Initialize => {
                             i::group_pointer::initialize(accounts, instruction_data)
                         }
                         GroupPointerInstruction::Update => {
                             i::group_pointer::update(accounts, instruction_data)
+                        }
+                    }
+                }
+
+                TokenInstruction::GroupMemberPointerExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: GroupMemberPointerInstruction =
+                        decode_instruction_type(instruction_data)
+                            .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        GroupMemberPointerInstruction::Initialize => {
+                            i::group_member_pointer::initialize(accounts, instruction_data)
+                        }
+                        GroupMemberPointerInstruction::Update => {
+                            i::group_member_pointer::update(accounts, instruction_data)
                         }
                     }
                 }
