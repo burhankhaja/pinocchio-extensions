@@ -1,4 +1,6 @@
 #[cfg(test)]
+pub mod group_member_pointer;
+#[cfg(test)]
 pub mod group_pointer;
 #[cfg(test)]
 pub mod initialize_mint;
