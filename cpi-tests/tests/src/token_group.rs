@@ -87,15 +87,6 @@ fn initialize_token_group() -> TestResult<()> {
         None,
     )?;
 
-    // app.token_2022_try_initialize_member(
-    //     AppUser::Admin,
-    //     mint_pubkey,
-    //     &AppUser::Admin.keypair(),
-    //     &AppUser::Bob.pubkey(),
-    //     &AppUser::Bob.pubkey(),
-    //     &AppUser::Bob.keypair(),
-    // )?;
-
     Ok(())
 }
 
@@ -176,15 +167,6 @@ fn proxy_initialize_token_group() -> TestResult<()> {
         &mint_authority.pubkey(),
         None,
     )?;
-
-    // app.token_2022_proxy_try_initialize_member(
-    //     AppUser::Admin,
-    //     mint_pubkey,
-    //     &AppUser::Admin.keypair(),
-    //     &AppUser::Bob.pubkey(),
-    //     &AppUser::Bob.pubkey(),
-    //     &AppUser::Bob.keypair(),
-    // )?;
 
     Ok(())
 }

@@ -199,9 +199,8 @@ impl TokenGroupMember {
     /// The length of the account with `TokenGroupMember` data
     const LEN: usize = Self::DATA_START + Self::BASE_LEN;
 
-    // TODO: fix
     /// The index where TokenGroupMember data starts
-    const DATA_START: usize = 8;
+    const DATA_START: usize = 238;
 
     /// The length of the `TokenGroupMember` data.
     pub const BASE_LEN: usize = mem::size_of::<TokenGroupMember>();

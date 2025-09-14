@@ -275,6 +275,12 @@ impl Token2022TokenGroupExtension for App {
             group_update_authority,
         ];
 
+        let lamports = self
+            .litesvm
+            .get_sysvar::<solana_program::sysvar::rent::Rent>()
+            .minimum_balance(core::mem::size_of::<TokenGroupMember>());
+        self.transfer_sol(sender, &pin_to_sol_pubkey(&member), lamports)?;
+
         let ix = spl_token_group_interface::instruction::initialize_member(
             &token_2022_program.to_bytes().into(),
             &pin_pubkey_to_addr(member),
