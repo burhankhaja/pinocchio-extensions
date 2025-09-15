@@ -36,6 +36,15 @@ pub trait Token2022GroupPointerExtension {
         group_address: Option<&Pubkey>,
     ) -> TestResult<TransactionMetadata>;
 
+    fn token_2022_try_update_group_pointer_multisig(
+        &mut self,
+        target: Target,
+        mint: &Pubkey,
+        multisig_authority: &Pubkey,
+        signers: &[AppUser],
+        group_address: Option<&Pubkey>,
+    ) -> TestResult<TransactionMetadata>;
+
     fn token_2022_query_group_pointer(
         &self,
         target: Target,
@@ -154,6 +163,70 @@ impl Token2022GroupPointerExtension for App {
             &mut self.litesvm,
             &[ix_legacy],
             signers,
+            self.is_log_displayed,
+        )
+    }
+
+    fn token_2022_try_update_group_pointer_multisig(
+        &mut self,
+        target: Target,
+        mint: &Pubkey,
+        multisig_authority: &Pubkey,
+        signers: &[AppUser],
+        group_address: Option<&Pubkey>,
+    ) -> TestResult<TransactionMetadata> {
+        let ProgramId {
+            token_2022_program,
+            token_2022_proxy,
+            ..
+        } = self.program_id;
+
+        let signer_keypairs: Vec<_> = signers.iter().map(|s| s.keypair()).collect();
+
+        // create authority signers for the instruction
+        let authority_signers: Vec<_> = signers
+            .iter()
+            .map(|s| pin_pubkey_to_addr(&s.pubkey().to_bytes()))
+            .collect();
+        let authority_signer_refs: Vec<_> = authority_signers.iter().collect();
+
+        let ix = spl_token_2022_interface::extension::group_pointer::instruction::update(
+            &token_2022_program.to_bytes().into(),
+            &pin_pubkey_to_addr(mint),
+            &pin_pubkey_to_addr(multisig_authority),
+            &authority_signer_refs,
+            group_address.map(pin_pubkey_to_addr),
+        )
+        .map_err(TestError::from_raw_error)?;
+
+        let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
+            token_2022_program,
+            false,
+        )];
+
+        let mut ix_legacy = solana_instruction::Instruction {
+            program_id: addr_to_sol_pubkey(&ix.program_id),
+            accounts: ix
+                .accounts
+                .into_iter()
+                .map(|x| solana_instruction::AccountMeta {
+                    pubkey: addr_to_sol_pubkey(&x.pubkey),
+                    is_signer: x.is_signer,
+                    is_writable: x.is_writable,
+                })
+                .collect(),
+            data: ix.data,
+        };
+
+        if let Target::Proxy = target {
+            ix_legacy.program_id = token_2022_proxy;
+            ix_legacy.accounts.extend_from_slice(&additional_accounts);
+        }
+
+        send_tx(
+            &mut self.litesvm,
+            &[ix_legacy],
+            &signer_keypairs,
             self.is_log_displayed,
         )
     }
