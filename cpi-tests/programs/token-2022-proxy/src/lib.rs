@@ -9,8 +9,10 @@ use {
     pinocchio_pubkey::declare_id,
     spl_token_2022_interface::{
         extension::{
+            cpi_guard::instruction::CpiGuardInstruction,
             group_member_pointer::instruction::GroupMemberPointerInstruction,
             group_pointer::instruction::GroupPointerInstruction,
+            scaled_ui_amount::instruction::ScaledUiAmountMintInstruction,
         },
         instruction::{decode_instruction_type, TokenInstruction},
     },
@@ -76,6 +78,34 @@ pub fn process_instruction(
 
                 TokenInstruction::InitializePermanentDelegate { delegate } => {
                     initialize_permanent_delegate(accounts, delegate)
+                TokenInstruction::CpiGuardExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: CpiGuardInstruction = decode_instruction_type(instruction_data)
+                        .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        CpiGuardInstruction::Enable => {
+                            i::cpi_guard::enable_guard(accounts, instruction_data)
+                        }
+                        CpiGuardInstruction::Disable => {
+                            i::cpi_guard::disable_guard(accounts, instruction_data)
+                        }
+                    }
+                }
+
+                TokenInstruction::ScaledUiAmountExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: ScaledUiAmountMintInstruction = decode_instruction_type(instruction_data)
+                        .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        ScaledUiAmountMintInstruction::Initialize => {
+                            i::scaled_ui_amount::initialize_scaled_ui_amount(accounts, instruction_data)
+                        }
+                        ScaledUiAmountMintInstruction::UpdateMultiplier => {
+                            i::scaled_ui_amount::update_multiplier(accounts, instruction_data)
+                        }
+                    }
                 }
 
                 _ => Err(ProgramError::InvalidInstructionData)?,
