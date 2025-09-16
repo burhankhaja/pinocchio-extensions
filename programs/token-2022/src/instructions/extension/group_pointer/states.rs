@@ -104,6 +104,14 @@ impl GroupPointer {
         Ok(unsafe { Self::from_bytes_unchecked(bytes) })
     }
 
+    /// Creates a new state
+    pub fn new(authority: Option<&Pubkey>, group_address: Option<&Pubkey>) -> Self {
+        Self {
+            authority: authority.map(|&x| x).unwrap_or_default(),
+            group_address: group_address.map(|&x| x).unwrap_or_default(),
+        }
+    }
+
     #[inline(always)]
     pub fn has_authority(&self) -> bool {
         self.authority != Pubkey::default()

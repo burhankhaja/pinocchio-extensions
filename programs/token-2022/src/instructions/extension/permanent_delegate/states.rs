@@ -7,31 +7,30 @@ use {
     },
 };
 
+/// Permanent delegate extension data for mints.
 #[repr(C)]
-pub struct GroupMemberPointer {
-    /// Authority that can set the member address
-    authority: Pubkey,
-    /// Account address that holds the member
-    member_address: Pubkey,
+pub struct PermanentDelegate {
+    /// Optional permanent delegate for transferring or burning tokens
+    delegate: Pubkey,
 }
 
-impl GroupMemberPointer {
-    /// The length of the mint with `GroupMemberPointer` extension data
-    const LEN: u8 = 234;
-    /// The index where authority address starts in the mint with `GroupMemberPointer` extension data
-    const AUTHORITY_START: u8 = 170;
+impl PermanentDelegate {
+    /// The length of the mint with `PermanentDelegate` extension data
+    const LEN: u8 = 202;
+    /// The index where delegate address starts in the mint with `PermanentDelegate` extension data
+    const DELEGATE_START: u8 = 170;
 
-    /// The length of the `GroupMemberPointer` extension data.
-    pub const BASE_LEN: usize = core::mem::size_of::<GroupMemberPointer>();
+    /// The length of the `PermanentDelegate` extension data.
+    pub const BASE_LEN: usize = core::mem::size_of::<PermanentDelegate>();
 
-    /// Return a `GroupMemberPointer` from the given account info.
+    /// Return a `PermanentDelegate` from the given account info.
     ///
     /// This method performs owner and length validation on `AccountInfo`, safe borrowing
     /// the account data.
     #[inline]
     pub fn from_account_info(
         account_info: &AccountInfo,
-    ) -> Result<Ref<GroupMemberPointer>, ProgramError> {
+    ) -> Result<Ref<PermanentDelegate>, ProgramError> {
         // Check data length first
         if account_info.data_len() < Self::LEN as usize {
             Err(ProgramError::InvalidAccountData)?;
@@ -52,7 +51,7 @@ impl GroupMemberPointer {
         }))
     }
 
-    /// Return a `GroupMemberPointer` from the given account info.
+    /// Return a `PermanentDelegate` from the given account info.
     ///
     /// This method performs owner and length validation on `AccountInfo`, but does not
     /// perform the borrow check.
@@ -80,18 +79,18 @@ impl GroupMemberPointer {
         Ok(Self::from_bytes_unchecked(data))
     }
 
-    /// Return a `GroupMemberPointer` from the given bytes.
+    /// Return a `PermanentDelegate` from the given bytes.
     ///
     /// # Safety
     ///
     /// The caller must ensure that:
     /// 1. `bytes` contains at least `LEN` bytes
-    /// 2. `bytes` contains a valid representation of `GroupMemberPointer`
-    /// 3. The data is properly aligned (though GroupMemberPointer has alignment of 1)
+    /// 2. `bytes` contains a valid representation of `PermanentDelegate`
+    /// 3. The data is properly aligned (though PermanentDelegate has alignment of 1)
     /// 4. The bytes represent valid flag values and pubkey data
     #[inline(always)]
     pub unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
-        &*(bytes[Self::AUTHORITY_START as usize..].as_ptr() as *const GroupMemberPointer)
+        &*(bytes[Self::DELEGATE_START as usize..].as_ptr() as *const PermanentDelegate)
     }
 
     /// Safe version of from_bytes that performs validation
@@ -105,56 +104,32 @@ impl GroupMemberPointer {
     }
 
     /// Creates a new state
-    pub fn new(authority: Option<&Pubkey>, member_address: Option<&Pubkey>) -> Self {
+    pub fn new(delegate: Option<&Pubkey>) -> Self {
         Self {
-            authority: authority.map(|&x| x).unwrap_or_default(),
-            member_address: member_address.map(|&x| x).unwrap_or_default(),
+            delegate: delegate.map(|&x| x).unwrap_or_default(),
         }
     }
 
     #[inline(always)]
-    pub fn has_authority(&self) -> bool {
-        self.authority != Pubkey::default()
+    pub fn has_delegate(&self) -> bool {
+        self.delegate != Pubkey::default()
     }
 
     #[inline]
-    pub fn authority(&self) -> Option<&Pubkey> {
-        if self.has_authority() {
-            Some(&self.authority)
+    pub fn delegate(&self) -> Option<&Pubkey> {
+        if self.has_delegate() {
+            Some(&self.delegate)
         } else {
             None
         }
     }
 
-    /// Return the authority.
+    /// Return the delegate.
     ///
-    /// This method should be used when the caller knows that the group member pointer will have an
-    /// authority set since it skips the `Option` check.
+    /// This method should be used when the caller knows that the permanent delegate will have an
+    /// delegate set since it skips the `Option` check.
     #[inline(always)]
-    pub fn authority_unchecked(&self) -> &Pubkey {
-        &self.authority
-    }
-
-    #[inline(always)]
-    pub fn has_member_address(&self) -> bool {
-        self.member_address != Pubkey::default()
-    }
-
-    #[inline]
-    pub fn member_address(&self) -> Option<&Pubkey> {
-        if self.has_member_address() {
-            Some(&self.member_address)
-        } else {
-            None
-        }
-    }
-
-    /// Return the member address.
-    ///
-    /// This method should be used when the caller knows that the group member pointer will have a
-    /// member address set since it skips the `Option` check.
-    #[inline(always)]
-    pub fn member_address_unchecked(&self) -> &Pubkey {
-        &self.member_address
+    pub fn delegate_unchecked(&self) -> &Pubkey {
+        &self.delegate
     }
 }

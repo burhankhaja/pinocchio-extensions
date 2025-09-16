@@ -1,6 +1,7 @@
 #![allow(unexpected_cfgs)]
 
 use {
+    crate::instructions::initialize_permanent_delegate,
     pinocchio::{
         account_info::AccountInfo, entrypoint, program_error::ProgramError, pubkey::Pubkey,
         ProgramResult,
@@ -71,6 +72,10 @@ pub fn process_instruction(
                             i::group_member_pointer::update(accounts, instruction_data)
                         }
                     }
+                }
+
+                TokenInstruction::InitializePermanentDelegate { delegate } => {
+                    initialize_permanent_delegate(accounts, delegate)
                 }
 
                 _ => Err(ProgramError::InvalidInstructionData)?,
