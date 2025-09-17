@@ -24,6 +24,7 @@ pub mod helpers {
             pub mod initialize_multisig;
             pub mod permanent_delegate;
             pub mod scaled_ui_amount;
+            pub mod token_account;
             pub mod token_group;
         }
     }
