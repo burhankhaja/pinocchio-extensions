@@ -1,9 +1,9 @@
 use {
-    crate::instructions::extension::{
-        group_pointer::constants::{
+    crate::extension::{
+        consts::ExtensionDiscriminator,
+        group_pointer::state::{
             offset_group_pointer_initialize as OFFSET, InstructionDiscriminatorGroupPointer,
         },
-        ExtensionDiscriminator,
     },
     pinocchio::{
         account_info::AccountInfo,

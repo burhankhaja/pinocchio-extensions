@@ -110,7 +110,7 @@ impl Token2022PermanentDelegateExtension for App {
                     .map_err(TestError::from_raw_error)
             }
             Target::Proxy => {
-                use pinocchio_token_2022::instructions::extension::permanent_delegate::states::PermanentDelegate as PinocchioPermanentDelegate;
+                use pinocchio_token_2022::extension::permanent_delegate::state::PermanentDelegate as PinocchioPermanentDelegate;
 
                 let state = PinocchioPermanentDelegate::from_bytes(data)
                     .map_err(TestError::from_raw_error)?;

@@ -10,7 +10,7 @@ pub fn initialize_permanent_delegate(accounts: &[AccountInfo], delegate: Address
     };
 
     if pinocchio_token_2022::state::Mint::from_account_info(mint)?.is_initialized() {
-        let state = pinocchio_token_2022::instructions::extension::permanent_delegate::states::PermanentDelegate::from_account_info(mint)?;
+        let state = pinocchio_token_2022::extension::permanent_delegate::state::PermanentDelegate::from_account_info(mint)?;
 
         if state.delegate() != Some(&delegate.to_bytes()) {
             Err(ProgramError::InvalidAccountData)?
@@ -19,7 +19,7 @@ pub fn initialize_permanent_delegate(accounts: &[AccountInfo], delegate: Address
         return Ok(());
     }
 
-    pinocchio_token_2022::instructions::extension::permanent_delegate::InitializePermanentDelegate {
+    pinocchio_token_2022::extension::permanent_delegate::InitializePermanentDelegate {
         mint,
         delegate: delegate.to_bytes(),
         token_program: &token_program.key(),

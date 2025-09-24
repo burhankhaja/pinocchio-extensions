@@ -1,12 +1,12 @@
 use {
-    crate::instructions::{
+    crate::{
         extension::{
-            group_pointer::constants::{
+            consts::ExtensionDiscriminator,
+            group_pointer::state::{
                 offset_group_pointer_update as OFFSET, InstructionDiscriminatorGroupPointer,
             },
-            ExtensionDiscriminator,
         },
-        MAX_MULTISIG_SIGNERS,
+        instructions::MAX_MULTISIG_SIGNERS,
     },
     core::{mem::MaybeUninit, slice},
     pinocchio::{

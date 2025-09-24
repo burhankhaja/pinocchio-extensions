@@ -1,7 +1,7 @@
 use {
-    crate::instructions::extension::{
-        permanent_delegate::constants::offset_permanent_delegate_initialize as OFFSET,
-        ExtensionDiscriminator,
+    crate::extension::{
+        consts::ExtensionDiscriminator,
+        permanent_delegate::state::offset_permanent_delegate_initialize as OFFSET,
     },
     pinocchio::{
         account_info::AccountInfo,

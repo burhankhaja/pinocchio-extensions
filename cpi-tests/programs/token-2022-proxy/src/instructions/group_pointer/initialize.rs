@@ -20,7 +20,10 @@ pub fn initialize(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramR
     let group_address = from_optional_non_zero_pubkey(group_address);
 
     if pinocchio_token_2022::state::Mint::from_account_info(mint)?.is_initialized() {
-        let pointer = pinocchio_token_2022::instructions::extension::group_pointer::states::GroupPointer::from_account_info(mint)?;
+        let pointer =
+            pinocchio_token_2022::extension::group_pointer::state::GroupPointer::from_account_info(
+                mint,
+            )?;
 
         if pointer.authority() != authority.as_ref() {
             Err(ProgramError::InvalidAccountData)?
@@ -33,7 +36,7 @@ pub fn initialize(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramR
         return Ok(());
     }
 
-    pinocchio_token_2022::instructions::extension::group_pointer::Initialize {
+    pinocchio_token_2022::extension::group_pointer::Initialize {
         mint,
         authority: authority.as_ref(),
         group_address: group_address.as_ref(),

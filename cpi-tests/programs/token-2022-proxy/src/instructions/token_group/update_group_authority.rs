@@ -13,7 +13,7 @@ pub fn update_group_authority(
         Err(ProgramError::InvalidAccountData)?
     };
 
-    pinocchio_token_2022::instructions::extension::token_group::UpdateGroupAuthority {
+    pinocchio_token_2022::extension::token_group::UpdateGroupAuthority {
         group,
         current_authority,
         new_authority: from_optional_non_zero_pubkey(new_authority).as_ref(),

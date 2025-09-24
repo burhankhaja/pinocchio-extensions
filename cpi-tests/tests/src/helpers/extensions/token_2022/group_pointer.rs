@@ -251,7 +251,7 @@ impl Token2022GroupPointerExtension for App {
                     .map_err(TestError::from_raw_error)
             }
             Target::Proxy => {
-                use pinocchio_token_2022::instructions::extension::group_pointer::states::GroupPointer as PinocchioGroupPointer;
+                use pinocchio_token_2022::extension::group_pointer::state::GroupPointer as PinocchioGroupPointer;
 
                 let state =
                     PinocchioGroupPointer::from_bytes(data).map_err(TestError::from_raw_error)?;

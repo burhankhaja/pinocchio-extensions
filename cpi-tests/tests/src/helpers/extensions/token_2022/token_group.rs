@@ -346,7 +346,7 @@ impl Token2022TokenGroupExtension for App {
                     .map_err(TestError::from_raw_error)
             }
             Target::Proxy => {
-                use pinocchio_token_2022::instructions::extension::token_group::states::TokenGroup as PinocchioTokenGroup;
+                use pinocchio_token_2022::extension::token_group::state::TokenGroup as PinocchioTokenGroup;
 
                 let state =
                     PinocchioTokenGroup::from_bytes(data).map_err(TestError::from_raw_error)?;
@@ -385,7 +385,7 @@ impl Token2022TokenGroupExtension for App {
                     .map_err(TestError::from_raw_error)
             }
             Target::Proxy => {
-                use pinocchio_token_2022::instructions::extension::token_group::states::TokenGroupMember as PinocchioTokenGroupMember;
+                use pinocchio_token_2022::extension::token_group::state::TokenGroupMember as PinocchioTokenGroupMember;
 
                 let state = PinocchioTokenGroupMember::from_bytes(data)
                     .map_err(TestError::from_raw_error)?;
