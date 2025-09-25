@@ -8,6 +8,8 @@ pub mod group_pointer;
 pub mod initialize_mint;
 #[cfg(test)]
 pub mod permanent_delegate;
+pub mod pausable;
+#[cfg(test)]
 pub mod scaled_ui_amount;
 #[cfg(test)]
 pub mod token_group;
@@ -23,6 +25,7 @@ pub mod helpers {
             pub mod initialize_mint;
             pub mod initialize_multisig;
             pub mod permanent_delegate;
+            pub mod pausable;
             pub mod scaled_ui_amount;
             pub mod token_account;
             pub mod token_group;

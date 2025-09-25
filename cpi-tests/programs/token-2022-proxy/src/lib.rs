@@ -12,6 +12,7 @@ use {
             cpi_guard::instruction::CpiGuardInstruction,
             group_member_pointer::instruction::GroupMemberPointerInstruction,
             group_pointer::instruction::GroupPointerInstruction,
+            pausable::instruction::PausableInstruction,
             scaled_ui_amount::instruction::ScaledUiAmountMintInstruction,
         },
         instruction::{decode_instruction_type, TokenInstruction},
@@ -104,6 +105,24 @@ pub fn process_instruction(
                         }
                         ScaledUiAmountMintInstruction::UpdateMultiplier => {
                             i::scaled_ui_amount::update_multiplier(accounts, instruction_data)
+                        }
+                    }
+                }
+
+                TokenInstruction::PausableExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: PausableInstruction = decode_instruction_type(instruction_data)
+                        .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        PausableInstruction::Initialize => {
+                            i::pausable::initialize(accounts, instruction_data)
+                        }
+                        PausableInstruction::Pause => {
+                            i::pausable::pause(accounts, instruction_data)
+                        }
+                        PausableInstruction::Resume => {
+                            i::pausable::resume(accounts, instruction_data)
                         }
                     }
                 }

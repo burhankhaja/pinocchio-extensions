@@ -15,18 +15,18 @@ use pinocchio::{
     ProgramResult,
 };
 
-pub struct Resume<'a, 'b, 'c> {
+pub struct Resume<'a, 'b> {
     /// Mint Account to resume.
     pub mint_account: &'a AccountInfo,
     /// Authority Account.
     pub authority: &'a AccountInfo,
     /// Signer Accounts (for multisig support)
-    pub signers: &'b [&'a AccountInfo],
+    pub signers: &'b [AccountInfo],
     /// Token Program
-    pub token_program: &'c Pubkey,
+    pub token_program: &'b Pubkey,
 }
 
-impl Resume<'_, '_, '_> {
+impl Resume<'_, '_> {
     #[inline(always)]
     pub fn invoke(&self) -> ProgramResult {
         self.invoke_signed(&[])

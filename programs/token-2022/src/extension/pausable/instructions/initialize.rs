@@ -3,7 +3,7 @@ use core::slice;
 use crate::{
     extension::pausable::state::{
         pausable_initialize_instruction_data, PausableInstruction,
-    },
+    }, UNINIT_BYTE,
 };
 
 use pinocchio::{
@@ -13,16 +13,16 @@ use pinocchio::{
     ProgramResult,
 };
 
-pub struct InitializePausable<'a, 'b, 'c> {
+pub struct InitializePausable<'a> {
     /// Mint Account to initialize.
     pub mint_account: &'a AccountInfo,
-    /// Authority Account.
-    pub authority: &'b Pubkey,
+    /// Optional authority
+    pub authority: Option<&'a Pubkey>,
     /// Token Program
-    pub token_program: &'c Pubkey,
+    pub token_program: &'a Pubkey,
 }
 
-impl InitializePausable<'_, '_, '_> {
+impl InitializePausable<'_> {
     #[inline(always)]
     pub fn invoke(&self) -> ProgramResult {
         self.invoke_signed(&[])
@@ -42,7 +42,7 @@ impl InitializePausable<'_, '_, '_> {
 
         let data = pausable_initialize_instruction_data(
             PausableInstruction::Initialize,
-            *authority,
+            authority,
         );
 
         let instruction = Instruction {

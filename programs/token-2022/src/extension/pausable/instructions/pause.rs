@@ -15,18 +15,18 @@ use pinocchio::{
     ProgramResult,
 };
 
-pub struct Pause<'a, 'b, 'c> {
+pub struct Pause<'a, 'b> {
     /// Mint Account to pause.
     pub mint_account: &'a AccountInfo,
     /// Authority Account.
     pub authority: &'a AccountInfo,
     /// Signer Accounts (for multisig support)
-    pub signers: &'b [&'a AccountInfo],
+    pub signers: &'b [AccountInfo],
     /// Token Program
-    pub token_program: &'c Pubkey,
+    pub token_program: &'b Pubkey,
 }
 
-impl Pause<'_, '_, '_> {
+impl Pause<'_, '_> {
     #[inline(always)]
     pub fn invoke(&self) -> ProgramResult {
         self.invoke_signed(&[])
