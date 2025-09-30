@@ -23,7 +23,7 @@ pub fn update(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResul
     } = decode_instruction_data(instruction_data)
         .map_err(|_| ProgramError::InvalidInstructionData)?;
 
-    pinocchio_token_2022::instructions::extension::group_pointer::Update {
+    pinocchio_token_2022::extension::group_pointer::Update {
         mint,
         authority,
         group_address: Option::<solana_address::Address>::from(group_address)

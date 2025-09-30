@@ -17,7 +17,9 @@ pub fn initialize_group(
     let update_authority = from_optional_non_zero_pubkey(update_authority);
     let max_size: u64 = max_size.into();
 
-    if let Ok(token_group) = pinocchio_token_2022::instructions::extension::token_group::states::TokenGroup::from_account_info(mint) {
+    if let Ok(token_group) =
+        pinocchio_token_2022::extension::token_group::state::TokenGroup::from_account_info(mint)
+    {
         if token_group.update_authority() != update_authority.as_ref() {
             Err(ProgramError::InvalidAccountData)?
         }
@@ -29,7 +31,7 @@ pub fn initialize_group(
         return Ok(());
     }
 
-    pinocchio_token_2022::instructions::extension::token_group::InitializeGroup {
+    pinocchio_token_2022::extension::token_group::InitializeGroup {
         group,
         mint,
         mint_authority,

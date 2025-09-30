@@ -5,6 +5,8 @@ pub mod group_pointer;
 #[cfg(test)]
 pub mod initialize_mint;
 #[cfg(test)]
+pub mod permanent_delegate;
+#[cfg(test)]
 pub mod token_group;
 #[cfg(test)]
 pub mod token_group_member;
@@ -16,6 +18,7 @@ pub mod helpers {
             pub mod group_pointer;
             pub mod initialize_mint;
             pub mod initialize_multisig;
+            pub mod permanent_delegate;
             pub mod token_group;
         }
     }

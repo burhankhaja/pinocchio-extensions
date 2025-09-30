@@ -10,7 +10,11 @@ pub fn initialize_member(accounts: &[AccountInfo]) -> ProgramResult {
         Err(ProgramError::InvalidAccountData)?
     };
 
-    if let Ok(token_group_member) = pinocchio_token_2022::instructions::extension::token_group::states::TokenGroupMember::from_account_info(member) {
+    if let Ok(token_group_member) =
+        pinocchio_token_2022::extension::token_group::state::TokenGroupMember::from_account_info(
+            member,
+        )
+    {
         if token_group_member.group() != group.key() {
             Err(ProgramError::InvalidAccountData)?
         }
@@ -18,7 +22,7 @@ pub fn initialize_member(accounts: &[AccountInfo]) -> ProgramResult {
         return Ok(());
     }
 
-    pinocchio_token_2022::instructions::extension::token_group::InitializeMember {
+    pinocchio_token_2022::extension::token_group::InitializeMember {
         member,
         member_mint,
         member_mint_authority,

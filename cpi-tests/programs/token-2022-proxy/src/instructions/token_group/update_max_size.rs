@@ -11,7 +11,7 @@ pub fn update_max_size(accounts: &[AccountInfo], max_size: PodU64) -> ProgramRes
 
     let max_size: u64 = max_size.into();
 
-    pinocchio_token_2022::instructions::extension::token_group::UpdateGroupMaxSize {
+    pinocchio_token_2022::extension::token_group::UpdateGroupMaxSize {
         group,
         update_authority,
         max_size,

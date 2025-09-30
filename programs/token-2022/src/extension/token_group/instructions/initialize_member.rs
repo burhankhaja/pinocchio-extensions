@@ -1,5 +1,5 @@
 use {
-    crate::instructions::extension::token_group::constants::{
+    crate::extension::token_group::state::{
         offset_token_group_initialize_member as OFFSET, InstructionDiscriminatorTokenGroup,
     },
     pinocchio::{

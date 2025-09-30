@@ -247,14 +247,14 @@ impl Token2022GroupMemberPointerExtension for App {
                 let mint_with_extensions =
                     StateWithExtensions::<Mint>::unpack(data).map_err(TestError::from_raw_error)?;
 
-                // get the GroupPointer extension
+                // get the extension
                 mint_with_extensions
                     .get_extension::<GroupMemberPointer>()
                     .map(|&x| x)
                     .map_err(TestError::from_raw_error)
             }
             Target::Proxy => {
-                use pinocchio_token_2022::instructions::extension::group_member_pointer::states::GroupMemberPointer as PinocchioGroupMemberPointer;
+                use pinocchio_token_2022::extension::group_member_pointer::state::GroupMemberPointer as PinocchioGroupMemberPointer;
 
                 let state = PinocchioGroupMemberPointer::from_bytes(data)
                     .map_err(TestError::from_raw_error)?;

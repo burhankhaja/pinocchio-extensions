@@ -1,6 +1,3 @@
-pub mod constants;
-pub mod states;
-
 mod initialize_group;
 mod initialize_member;
 mod update_group_authority;

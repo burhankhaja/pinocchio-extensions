@@ -1,10 +1,10 @@
 use {
-    crate::instructions::extension::{
-        group_member_pointer::constants::{
+    crate::extension::{
+        consts::ExtensionDiscriminator,
+        group_member_pointer::state::{
             offset_group_member_pointer_initialize as OFFSET,
             InstructionDiscriminatorGroupMemberPointer,
         },
-        ExtensionDiscriminator,
     },
     pinocchio::{
         account_info::AccountInfo,

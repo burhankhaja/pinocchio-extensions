@@ -1,5 +1,5 @@
 use {
-    crate::instructions::extension::token_group::constants::{
+    crate::extension::token_group::state::{
         offset_token_group_update_max_size as OFFSET, InstructionDiscriminatorTokenGroup,
     },
     pinocchio::{
