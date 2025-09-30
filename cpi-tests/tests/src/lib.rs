@@ -1,6 +1,8 @@
 #[cfg(test)]
 pub mod cpi_guard;
 #[cfg(test)]
+pub mod default_account_state;
+#[cfg(test)]
 pub mod group_member_pointer;
 #[cfg(test)]
 pub mod group_pointer;
@@ -20,6 +22,7 @@ pub mod helpers {
     pub mod extensions {
         pub mod token_2022 {
             pub mod cpi_guard;
+            pub mod default_account_state;
             pub mod group_member_pointer;
             pub mod group_pointer;
             pub mod initialize_mint;

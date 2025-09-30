@@ -20,7 +20,7 @@ pub fn initialize(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramR
     if pinocchio_token_2022::state::Mint::from_account_info(mint)?.is_initialized() {
         let pausable_config = pinocchio_token_2022::extension::pausable::state::PausableConfig::from_account_info(mint)?;
 
-        if pausable_config.authority() != Some(&auth_bytes) {
+        if pausable_config.authority() != &auth_bytes {
             Err(ProgramError::InvalidAccountData)?
         }
 
@@ -29,7 +29,7 @@ pub fn initialize(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramR
 
     pausable::InitializePausable {
         mint_account: mint,
-        authority: Some(&auth_bytes),
+        authority: auth_bytes,
         token_program: &token_program.key(),
     }
     .invoke()

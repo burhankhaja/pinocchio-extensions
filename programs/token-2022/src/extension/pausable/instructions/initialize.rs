@@ -17,7 +17,7 @@ pub struct InitializePausable<'a> {
     /// Mint Account to initialize.
     pub mint_account: &'a AccountInfo,
     /// Optional authority
-    pub authority: Option<&'a Pubkey>,
+    pub authority: Pubkey,
     /// Token Program
     pub token_program: &'a Pubkey,
 }

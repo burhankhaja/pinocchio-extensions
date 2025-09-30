@@ -10,6 +10,7 @@ use {
     spl_token_2022_interface::{
         extension::{
             cpi_guard::instruction::CpiGuardInstruction,
+            default_account_state::instruction::DefaultAccountStateInstruction,
             group_member_pointer::instruction::GroupMemberPointerInstruction,
             group_pointer::instruction::GroupPointerInstruction,
             pausable::instruction::PausableInstruction,
@@ -105,6 +106,21 @@ pub fn process_instruction(
                         }
                         ScaledUiAmountMintInstruction::UpdateMultiplier => {
                             i::scaled_ui_amount::update_multiplier(accounts, instruction_data)
+                        }
+                    }
+                }
+
+                TokenInstruction::DefaultAccountStateExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: DefaultAccountStateInstruction = decode_instruction_type(instruction_data)
+                        .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        DefaultAccountStateInstruction::Initialize => {
+                            i::default_account_state::initialize(accounts, instruction_data)
+                        }
+                        DefaultAccountStateInstruction::Update => {
+                            i::default_account_state::update(accounts, instruction_data)
                         }
                     }
                 }

@@ -24,14 +24,15 @@ pub struct ScaledUiAmountConfig {
     pub new_multiplier: f64,
 }
 
-impl ScaledUiAmountConfig {
-    /// The length of the mint with `ScaledUiAmount` extension data
-    const LEN: u8 = 226;
+impl ScaledUiAmountConfig {    
     /// The index where authority address starts in the mint with `ScaledUiAmount` extension data
-    const AUTHORITY_START: u8 = 170;
+    pub const AUTHORITY_START: usize = 170;
 
     /// The length of the `ScaledUiAmount` extension data.
     pub const BASE_LEN: usize = core::mem::size_of::<ScaledUiAmountConfig>();
+
+    /// The length of the mint with `ScaledUiAmount` extension data
+    pub const LEN: usize = Self::AUTHORITY_START + Self::BASE_LEN;
 
     /// Return a `ScaledUiAmountConfig` from the given account info.
     ///
@@ -77,22 +78,6 @@ impl ScaledUiAmountConfig {
     pub fn multiplier(&self) -> f64 {
         self.multiplier
     }
-}
-
-pub fn scaled_ui_amount_instruction_data(
-    instruction_type: ScaledUiAmountInstruction,
-) -> [MaybeUninit<u8>; 2] {
-    // instruction data
-    // -  [0]: instruction discriminator (1 byte, u8)
-    // -  [1]: instruction_type (1 byte, u8)
-    
-    let mut data = [UNINIT_BYTE; 2];
-    // Set extension discriminator at offset [0]
-    write_bytes(&mut data, &[SCALED_UI_AMOUNT_EXTENSION]);
-    // Set sub-instruction at offset [1]
-    write_bytes(&mut data[1..2], &[instruction_type as u8]);
-
-    data
 }
 
 pub fn scaled_ui_amount_initialize_instruction_data(
