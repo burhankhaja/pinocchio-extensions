@@ -351,7 +351,7 @@ fn update_transfer_hook_multisig_proxy() -> TestResult<()> {
     let (_, multisig_keypair) = app.token_2022_try_create_multisig(AppUser::Admin, None)?;
     let multisig_pubkey = &multisig_keypair.pubkey().to_bytes().into();
     app.token_2022_try_initialize_multisig(
-        Target::Proxy,
+        Target::Spl,
         AppUser::Admin,
         multisig_pubkey,
         2,

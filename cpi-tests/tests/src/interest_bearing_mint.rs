@@ -13,7 +13,9 @@ use {
     pretty_assertions::assert_eq,
     solana_signer::Signer,
     spl_pod::optional_keys::OptionalNonZeroPubkey,
-    spl_token_2022_interface::extension::{interest_bearing_mint::InterestBearingConfig, ExtensionType},
+    spl_token_2022_interface::extension::{
+        interest_bearing_mint::InterestBearingConfig, ExtensionType,
+    },
 };
 
 #[test]
@@ -357,7 +359,7 @@ fn proxy_initialize_and_update_interest_bearing_mint_with_multisig() -> TestResu
             rate_authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&multisig_authority)),
             initialization_timestamp: 0.into(),
             last_update_timestamp: 0.into(),
-            pre_update_average_rate: initial_rate.into(),
+            pre_update_average_rate: new_rate.into(),
             current_rate: final_rate.into(),
         }
     );
