@@ -1,6 +1,6 @@
 use core::mem::MaybeUninit;
 use crate::{write_bytes, UNINIT_BYTE, ID};
-use crate::extension::consts::DEFAULT_ACCOUNT_STATE_EXTENSION;
+use crate::extension::consts::ExtensionDiscriminator;
 use pinocchio::{
     account_info::{AccountInfo, Ref},
     program_error::ProgramError,
@@ -123,7 +123,7 @@ pub fn default_account_state_instruction_data(
     const UNINIT_BYTE: MaybeUninit<u8> = MaybeUninit::uninit();
     let mut data = [UNINIT_BYTE; 3];
     // Set extension discriminator at offset [0]
-    write_bytes(&mut data, &[DEFAULT_ACCOUNT_STATE_EXTENSION]);
+    write_bytes(&mut data, &[ExtensionDiscriminator::DefaultAccountState as u8]);
     // Set sub-instruction at offset [1]
     write_bytes(&mut data[1..2], &[instruction_type as u8]);
     // Set state at offset [2]

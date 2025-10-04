@@ -1,6 +1,6 @@
 use core::mem::MaybeUninit;
 use crate::{write_bytes, UNINIT_BYTE};
-use crate::extension::consts::SCALED_UI_AMOUNT_EXTENSION;
+use crate::extension::consts::ExtensionDiscriminator;
 use pinocchio::pubkey::Pubkey;
 
 #[repr(u8)]
@@ -93,7 +93,7 @@ pub fn scaled_ui_amount_initialize_instruction_data(
     
     let mut data = [UNINIT_BYTE; 42];
     // Set extension discriminator at offset [0]
-    write_bytes(&mut data, &[SCALED_UI_AMOUNT_EXTENSION]);
+    write_bytes(&mut data, &[ExtensionDiscriminator::ScaledUiAmount as u8]);
     // Set sub-instruction at offset [1]
     write_bytes(&mut data[1..2], &[instruction_type as u8]);
     // Set authority at offset [2..34] (32 bytes)
@@ -117,7 +117,7 @@ pub fn scaled_ui_amount_update_multiplier_instruction_data(
     
     let mut data = [UNINIT_BYTE; 18];
     // Set extension discriminator at offset [0]
-    write_bytes(&mut data, &[SCALED_UI_AMOUNT_EXTENSION]);
+    write_bytes(&mut data, &[ExtensionDiscriminator::ScaledUiAmount as u8]);
     // Set sub-instruction at offset [1]
     write_bytes(&mut data[1..2], &[instruction_type as u8]);
     // Set multiplier at offset [2..10]

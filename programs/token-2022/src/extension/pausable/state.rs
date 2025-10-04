@@ -1,6 +1,6 @@
 use core::mem::MaybeUninit;
 use crate::{write_bytes, UNINIT_BYTE, ID};
-use crate::extension::consts::PAUSABLE_EXTENSION;
+use crate::extension::consts::ExtensionDiscriminator;
 use pinocchio::{
     account_info::{AccountInfo, Ref},
     program_error::ProgramError,
@@ -87,7 +87,7 @@ pub fn pausable_instruction_data(
     
     let mut data = [UNINIT_BYTE; 2];
     // Set extension discriminator at offset [0]
-    write_bytes(&mut data, &[PAUSABLE_EXTENSION]);
+    write_bytes(&mut data, &[ExtensionDiscriminator::Pausable as u8]);
     // Set sub-instruction at offset [1]
     write_bytes(&mut data[1..2], &[instruction_type as u8]);
 
@@ -105,7 +105,7 @@ pub fn pausable_initialize_instruction_data(
     
     let mut data = [UNINIT_BYTE; 34];
     // Set extension discriminator at offset [0]
-    write_bytes(&mut data, &[PAUSABLE_EXTENSION]);
+    write_bytes(&mut data, &[ExtensionDiscriminator::Pausable as u8]);
     // Set sub-instruction at offset [1]
     write_bytes(&mut data[1..2], &[instruction_type as u8]);
     // Set authority at offset [2..34]

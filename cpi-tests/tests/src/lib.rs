@@ -10,6 +10,7 @@ pub mod group_pointer;
 pub mod initialize_mint;
 #[cfg(test)]
 pub mod permanent_delegate;
+#[cfg(test)]
 pub mod pausable;
 #[cfg(test)]
 pub mod scaled_ui_amount;
@@ -17,6 +18,10 @@ pub mod scaled_ui_amount;
 pub mod token_group;
 #[cfg(test)]
 pub mod token_group_member;
+#[cfg(test)]
+pub mod transfer_hook;
+#[cfg(test)]
+pub mod interest_bearing_mint;
 
 pub mod helpers {
     pub mod extensions {
@@ -32,6 +37,8 @@ pub mod helpers {
             pub mod scaled_ui_amount;
             pub mod token_account;
             pub mod token_group;
+            pub mod transfer_hook;
+            pub mod interest_bearing_mint;
         }
     }
 

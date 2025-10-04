@@ -13,8 +13,10 @@ use {
             default_account_state::instruction::DefaultAccountStateInstruction,
             group_member_pointer::instruction::GroupMemberPointerInstruction,
             group_pointer::instruction::GroupPointerInstruction,
+            interest_bearing_mint::instruction::InterestBearingMintInstruction,
             pausable::instruction::PausableInstruction,
             scaled_ui_amount::instruction::ScaledUiAmountMintInstruction,
+            transfer_hook::instruction::TransferHookInstruction,
         },
         instruction::{decode_instruction_type, TokenInstruction},
     },
@@ -80,6 +82,7 @@ pub fn process_instruction(
 
                 TokenInstruction::InitializePermanentDelegate { delegate } => {
                     initialize_permanent_delegate(accounts, delegate)
+                }
                 TokenInstruction::CpiGuardExtension => {
                     let instruction_data = &instruction_data[1..]; // Remove extension discriminator
                     let ix: CpiGuardInstruction = decode_instruction_type(instruction_data)
@@ -139,6 +142,36 @@ pub fn process_instruction(
                         }
                         PausableInstruction::Resume => {
                             i::pausable::resume(accounts, instruction_data)
+                        }
+                    }
+                }
+
+                TokenInstruction::TransferHookExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: TransferHookInstruction = decode_instruction_type(instruction_data)
+                        .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        TransferHookInstruction::Initialize => {
+                            i::transfer_hook::initialize(accounts, instruction_data)
+                        }
+                        TransferHookInstruction::Update => {
+                            i::transfer_hook::update(accounts, instruction_data)
+                        }
+                    }
+                }
+
+                TokenInstruction::InterestBearingMintExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: InterestBearingMintInstruction = decode_instruction_type(instruction_data)
+                        .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        InterestBearingMintInstruction::Initialize => {
+                            i::interest_bearing_mint::initialize(accounts, instruction_data)
+                        }
+                        InterestBearingMintInstruction::UpdateRate => {
+                            i::interest_bearing_mint::update_rate(accounts, instruction_data)
                         }
                     }
                 }
