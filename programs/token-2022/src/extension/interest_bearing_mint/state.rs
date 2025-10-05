@@ -1,5 +1,5 @@
 use {
-    crate::{write_bytes, UNINIT_BYTE, ID},
+    crate::{write_bytes, ID, UNINIT_BYTE},
     core::mem::MaybeUninit,
     pinocchio::{
         account_info::{AccountInfo, Ref},
@@ -15,16 +15,16 @@ pub enum InterestBearingMintInstruction {
     UpdateRate = 1,
 }
 
-#[repr(C)]
+#[repr(C, packed)]
 pub struct InterestBearingConfig {
     /// Authority that can set the interest rate
     rate_authority: Pubkey,
     /// Initialization timestamp
     initialization_timestamp: i64,
-    /// Last update timestamp
-    last_update_timestamp: i64,
     /// Pre-update average rate
     pre_update_average_rate: i16,
+    /// Last update timestamp
+    last_update_timestamp: i64,
     /// Current interest rate
     current_rate: i16,
 }
@@ -182,13 +182,19 @@ pub fn interest_bearing_mint_initialize_instruction_data(
     // -  [1]: instruction_type (1 byte, u8)
     // -  [2..34]: rate_authority pubkey (32 bytes, optional)
     // -  [34..36]: rate (2 bytes, i16)
-    
+
     let mut data = [UNINIT_BYTE; 36];
-    
+
     // Set extension discriminator at offset [0]
-    write_bytes(&mut data, &[crate::extension::consts::ExtensionDiscriminator::InterestBearingMint as u8]);
+    write_bytes(
+        &mut data,
+        &[crate::extension::consts::ExtensionDiscriminator::InterestBearingMint as u8],
+    );
     // Set sub-instruction at offset [1]
-    write_bytes(&mut data[1..2], &[InterestBearingMintInstruction::Initialize as u8]);
+    write_bytes(
+        &mut data[1..2],
+        &[InterestBearingMintInstruction::Initialize as u8],
+    );
     // Set rate_authority at offset [2..34]
     if let Some(auth) = rate_authority {
         write_bytes(&mut data[2..34], auth);
@@ -201,20 +207,24 @@ pub fn interest_bearing_mint_initialize_instruction_data(
     data
 }
 
-pub fn interest_bearing_mint_update_rate_instruction_data(
-    rate: i16,
-) -> [MaybeUninit<u8>; 4] {
+pub fn interest_bearing_mint_update_rate_instruction_data(rate: i16) -> [MaybeUninit<u8>; 4] {
     // instruction data
     // -  [0]: extension discriminator (1 byte, u8)
     // -  [1]: instruction_type (1 byte, u8)
     // -  [2..4]: rate (2 bytes, i16)
-    
+
     let mut data = [UNINIT_BYTE; 4];
-    
+
     // Set extension discriminator at offset [0]
-    write_bytes(&mut data, &[crate::extension::consts::ExtensionDiscriminator::InterestBearingMint as u8]);
+    write_bytes(
+        &mut data,
+        &[crate::extension::consts::ExtensionDiscriminator::InterestBearingMint as u8],
+    );
     // Set sub-instruction at offset [1]
-    write_bytes(&mut data[1..2], &[InterestBearingMintInstruction::UpdateRate as u8]);
+    write_bytes(
+        &mut data[1..2],
+        &[InterestBearingMintInstruction::UpdateRate as u8],
+    );
     // Set rate at offset [2..4]
     write_bytes(&mut data[2..4], &rate.to_le_bytes());
 
