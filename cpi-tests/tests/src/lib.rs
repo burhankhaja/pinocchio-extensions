@@ -18,6 +18,7 @@ pub mod helpers {
             pub mod group_pointer;
             pub mod initialize_mint;
             pub mod initialize_multisig;
+            pub mod initialize_token_account;
             pub mod permanent_delegate;
             pub mod token_group;
         }
