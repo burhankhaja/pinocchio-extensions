@@ -5,6 +5,8 @@ pub mod group_pointer;
 #[cfg(test)]
 pub mod initialize_mint;
 #[cfg(test)]
+pub mod initialize_token_account;
+#[cfg(test)]
 pub mod permanent_delegate;
 #[cfg(test)]
 pub mod token_group;
