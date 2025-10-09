@@ -43,6 +43,9 @@ pub fn process_instruction(
                     freeze_authority,
                 } => i::initialize_mint(accounts, decimals, mint_authority, freeze_authority),
 
+                // For Initializing TokenAccount
+                TokenInstruction::InitializeAccount => i::initialize_token_account(accounts),
+
                 TokenInstruction::GroupPointerExtension => {
                     let instruction_data = &instruction_data[1..]; // Remove extension discriminator
                     let ix: GroupPointerInstruction = decode_instruction_type(instruction_data)
