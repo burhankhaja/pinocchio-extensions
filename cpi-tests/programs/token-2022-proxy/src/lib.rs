@@ -11,6 +11,7 @@ use {
         extension::{
             group_member_pointer::instruction::GroupMemberPointerInstruction,
             group_pointer::instruction::GroupPointerInstruction,
+            memo_transfer::instruction::RequiredMemoTransfersInstruction
         },
         instruction::{decode_instruction_type, TokenInstruction},
     },
@@ -79,6 +80,23 @@ pub fn process_instruction(
 
                 TokenInstruction::InitializePermanentDelegate { delegate } => {
                     initialize_permanent_delegate(accounts, delegate)
+                }
+
+                // MemoTransfer Extention
+                TokenInstruction::MemoTransferExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: RequiredMemoTransfersInstruction =
+                        decode_instruction_type(instruction_data)
+                            .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        RequiredMemoTransfersInstruction::Enable => {
+                            i::memo_transfer::enable(accounts, instruction_data)
+                        }
+                        RequiredMemoTransfersInstruction::Disable => {
+                            i::memo_transfer::disable(accounts, instruction_data)
+                        }
+                    }
                 }
 
                 _ => Err(ProgramError::InvalidInstructionData)?,

@@ -1,6 +1,6 @@
 pub mod group_member_pointer;
 pub mod group_pointer;
-// pub mod memo_transfer;
+pub mod memo_transfer;
 pub mod token_group;
 
 mod initialize_mint;
