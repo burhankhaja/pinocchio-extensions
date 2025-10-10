@@ -7,6 +7,8 @@ pub mod initialize_mint;
 #[cfg(test)]
 pub mod initialize_token_account;
 #[cfg(test)]
+pub mod memo_transfer;
+#[cfg(test)]
 pub mod permanent_delegate;
 #[cfg(test)]
 pub mod token_group;
@@ -21,6 +23,7 @@ pub mod helpers {
             pub mod initialize_mint;
             pub mod initialize_multisig;
             pub mod initialize_token_account;
+            pub mod memo_transfer;
             pub mod permanent_delegate;
             pub mod token_group;
         }
