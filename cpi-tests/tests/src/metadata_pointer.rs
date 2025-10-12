@@ -238,6 +238,14 @@ fn proxy_initialize_and_update_metadata_pointer() -> TestResult<()> {
         }
     );
 
+    assert_eq!(
+        app.token_2022_query_metadata_pointer(Target::Proxy, mint_pubkey)?,
+        MetadataPointer {
+            authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&mint_authority.pubkey())),
+            metadata_address: OptionalNonZeroPubkey::default(),
+        }
+    );
+
     Ok(())
 }
 
