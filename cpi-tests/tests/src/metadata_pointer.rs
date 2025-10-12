@@ -311,7 +311,7 @@ fn proxy_initialize_and_update_metadata_pointer_with_multisig() -> TestResult<()
     let (_, new_metadata_keypair) = app.token_2022_try_create_mint_account(
         AppUser::Admin,
         None,
-        Some(&[ExtensionType::TokenMetadata]),
+        Some(&[ExtensionType::MetadataPointer]),
     )?;
     let new_metadata_address = &new_metadata_keypair.pubkey().to_bytes();
 
