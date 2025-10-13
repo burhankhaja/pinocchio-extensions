@@ -44,9 +44,6 @@ pub fn create_and_initialize_token_account() -> TestResult<()> {
     Ok(())
 }
 
-/// TODO: error — `TestError { info: "invalid instruction data", index: None }`  
-/// TODO: cause — issue in building/dispatching `Target::Proxy` instructions, account data is fine.
-/// TODO: debug how proxy instructions are actually built and sent in this test.
 #[test]
 pub fn proxy_create_and_initialize_token_account() -> TestResult<()> {
     let mut app = App::new(false);
