@@ -22,8 +22,8 @@ pub fn disable(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResu
     let token_program = accounts.last().unwrap(); // dev : since token_program is always the last account
     let signers = &accounts[2..accounts.len() - 1]; // dev : everything between authority and token_program ; note : in Single authority case: [2..2] will result in empty array
 
-    match instruction_data[1] {
-        // dev: byte at index 1 = Action Type; 1 = Disable
+    match instruction_data[0] {
+        // dev: use index 0 — lib.rs already strips the first byte (extension tag) from original instruction data; value `1` = Disable.
         1 => pinocchio_token_2022::extension::memo_transfer::Disable {
             token_account,
             authority,

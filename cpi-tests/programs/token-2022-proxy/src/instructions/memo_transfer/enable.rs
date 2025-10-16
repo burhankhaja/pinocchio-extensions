@@ -22,8 +22,8 @@ pub fn enable(accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResul
     let token_program = accounts.last().unwrap(); // dev : since token_program is always the last account
     let signers = &accounts[2..accounts.len() - 1]; // dev : everything between authority and token_program ; note : in Single authority case: [2..2] will result in empty array
 
-    match instruction_data[1] {
-        // dev: byte at index 1 = Action Type; 0 = Enable
+    match instruction_data[0] {
+        // dev: use index 0 — lib.rs already strips the first byte (extension tag) from original instruction data ; value `0` = Enable.
         0 => pinocchio_token_2022::extension::memo_transfer::Enable {
             token_account,
             authority,
