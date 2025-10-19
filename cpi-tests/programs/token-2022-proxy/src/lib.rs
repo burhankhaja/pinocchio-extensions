@@ -11,6 +11,7 @@ use {
         extension::{
             group_member_pointer::instruction::GroupMemberPointerInstruction,
             group_pointer::instruction::GroupPointerInstruction,
+            metadata_pointer::instruction::MetadataPointerInstruction,
         },
         instruction::{decode_instruction_type, TokenInstruction},
     },
@@ -70,6 +71,22 @@ pub fn process_instruction(
                         }
                         GroupMemberPointerInstruction::Update => {
                             i::group_member_pointer::update(accounts, instruction_data)
+                        }
+                    }
+                }
+
+                // MetadataPointer extention
+                TokenInstruction::MetadataPointerExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: MetadataPointerInstruction = decode_instruction_type(instruction_data)
+                        .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        MetadataPointerInstruction::Initialize => {
+                            i::metadata_pointer::initialize(accounts, instruction_data)
+                        }
+                        MetadataPointerInstruction::Update => {
+                            i::metadata_pointer::update(accounts, instruction_data)
                         }
                     }
                 }
