@@ -4,4 +4,5 @@ pub enum ExtensionDiscriminator {
     PermanentDelegate = 35,
     GroupPointer = 40,
     GroupMemberPointer = 41,
+    MetadataPointer = 39,
 }
