@@ -17,6 +17,8 @@ use {
             pausable::instruction::PausableInstruction,
             scaled_ui_amount::instruction::ScaledUiAmountMintInstruction,
             transfer_hook::instruction::TransferHookInstruction,
+            memo_transfer::instruction::RequiredMemoTransfersInstruction,
+            metadata_pointer::instruction::MetadataPointerInstruction,
         },
         instruction::{decode_instruction_type, TokenInstruction},
     },
@@ -49,6 +51,9 @@ pub fn process_instruction(
                     freeze_authority,
                 } => i::initialize_mint(accounts, decimals, mint_authority, freeze_authority),
 
+                // For Initializing TokenAccount
+                TokenInstruction::InitializeAccount => i::initialize_token_account(accounts),
+
                 TokenInstruction::GroupPointerExtension => {
                     let instruction_data = &instruction_data[1..]; // Remove extension discriminator
                     let ix: GroupPointerInstruction = decode_instruction_type(instruction_data)
@@ -76,6 +81,22 @@ pub fn process_instruction(
                         }
                         GroupMemberPointerInstruction::Update => {
                             i::group_member_pointer::update(accounts, instruction_data)
+                        }
+                    }
+                }
+
+                // MetadataPointer extention
+                TokenInstruction::MetadataPointerExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: MetadataPointerInstruction = decode_instruction_type(instruction_data)
+                        .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        MetadataPointerInstruction::Initialize => {
+                            i::metadata_pointer::initialize(accounts, instruction_data)
+                        }
+                        MetadataPointerInstruction::Update => {
+                            i::metadata_pointer::update(accounts, instruction_data)
                         }
                     }
                 }
@@ -172,6 +193,23 @@ pub fn process_instruction(
                         }
                         InterestBearingMintInstruction::UpdateRate => {
                             i::interest_bearing_mint::update_rate(accounts, instruction_data)
+                        }
+                    }
+                }
+
+                // MemoTransfer Extention
+                TokenInstruction::MemoTransferExtension => {
+                    let instruction_data = &instruction_data[1..]; // Remove extension discriminator
+                    let ix: RequiredMemoTransfersInstruction =
+                        decode_instruction_type(instruction_data)
+                            .map_err(|_| ProgramError::InvalidInstructionData)?;
+
+                    match ix {
+                        RequiredMemoTransfersInstruction::Enable => {
+                            i::memo_transfer::enable(accounts, instruction_data)
+                        }
+                        RequiredMemoTransfersInstruction::Disable => {
+                            i::memo_transfer::disable(accounts, instruction_data)
                         }
                     }
                 }

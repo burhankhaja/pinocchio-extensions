@@ -1,6 +1,7 @@
 #[repr(u8)]
 pub enum ExtensionDiscriminator {
     CpiGuard = 34,
+    MemoTransfer = 30,
     PermanentDelegate = 35,
     ScaledUiAmount = 43,
     Pausable = 44,
@@ -9,4 +10,5 @@ pub enum ExtensionDiscriminator {
     GroupMemberPointer = 41,
     TransferHook = 36,
     InterestBearingMint = 33,
+    MetadataPointer = 39,
 }

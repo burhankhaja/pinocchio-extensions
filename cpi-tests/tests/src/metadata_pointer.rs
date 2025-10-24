@@ -1,9 +1,9 @@
 use {
     crate::helpers::{
         extensions::token_2022::{
-            group_pointer::Token2022GroupPointerExtension,
             initialize_mint::Token2022InitializeMintExtension,
             initialize_multisig::Token2022InitializeMultisigExtension,
+            metadata_pointer::Token2022MetadataPointerExtension,
         },
         suite::{
             core::App,
@@ -13,16 +13,16 @@ use {
     pretty_assertions::assert_eq,
     solana_signer::Signer,
     spl_pod::optional_keys::OptionalNonZeroPubkey,
-    spl_token_2022_interface::extension::{group_pointer::GroupPointer, ExtensionType},
+    spl_token_2022_interface::extension::{metadata_pointer::MetadataPointer, ExtensionType},
 };
 
 #[test]
-fn initialize_group_pointer_with_default_authority() -> TestResult<()> {
+fn initialize_metadata_pointer_with_default_authority() -> TestResult<()> {
     let mut app = App::new(false);
     let (_, mint_keypair) = app.token_2022_try_create_mint_account(
         AppUser::Admin,
         None,
-        Some(&[ExtensionType::GroupPointer]),
+        Some(&[ExtensionType::MetadataPointer]),
     )?;
 
     let mint_pubkey = &mint_keypair.pubkey().to_bytes();
@@ -30,12 +30,12 @@ fn initialize_group_pointer_with_default_authority() -> TestResult<()> {
     let mint_authority = AppUser::Admin;
     let freeze_authority = Some(AppUser::Admin.pubkey());
 
-    let group_pointer = GroupPointer {
+    let metadata_pointer = MetadataPointer {
         authority: OptionalNonZeroPubkey::default(),
-        group_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
+        metadata_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
     };
 
-    app.token_2022_try_initialize_group_pointer(
+    app.token_2022_try_initialize_metadata_pointer(
         Target::Spl,
         AppUser::Admin,
         mint_pubkey,
@@ -53,20 +53,20 @@ fn initialize_group_pointer_with_default_authority() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
-        group_pointer
+        app.token_2022_query_metadata_pointer(Target::Spl, mint_pubkey)?,
+        metadata_pointer
     );
 
     Ok(())
 }
 
 #[test]
-fn proxy_initialize_group_pointer_with_default_authority() -> TestResult<()> {
+fn proxy_initialize_metadata_pointer_with_default_authority() -> TestResult<()> {
     let mut app = App::new(false);
     let (_, mint_keypair) = app.token_2022_try_create_mint_account(
         AppUser::Admin,
         None,
-        Some(&[ExtensionType::GroupPointer]),
+        Some(&[ExtensionType::MetadataPointer]),
     )?;
 
     let mint_pubkey = &mint_keypair.pubkey().to_bytes();
@@ -74,12 +74,12 @@ fn proxy_initialize_group_pointer_with_default_authority() -> TestResult<()> {
     let mint_authority = AppUser::Admin;
     let freeze_authority = Some(AppUser::Admin.pubkey());
 
-    let group_pointer = GroupPointer {
+    let metadata_pointer = MetadataPointer {
         authority: OptionalNonZeroPubkey::default(),
-        group_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
+        metadata_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
     };
 
-    app.token_2022_try_initialize_group_pointer(
+    app.token_2022_try_initialize_metadata_pointer(
         Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
@@ -97,24 +97,24 @@ fn proxy_initialize_group_pointer_with_default_authority() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
-        group_pointer
+        app.token_2022_query_metadata_pointer(Target::Spl, mint_pubkey)?,
+        metadata_pointer
     );
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Proxy, mint_pubkey)?,
-        group_pointer
+        app.token_2022_query_metadata_pointer(Target::Proxy, mint_pubkey)?,
+        metadata_pointer
     );
 
     Ok(())
 }
 
 #[test]
-fn initialize_and_update_group_pointer() -> TestResult<()> {
+fn initialize_and_update_metadata_pointer() -> TestResult<()> {
     let mut app = App::new(false);
     let (_, mint_keypair) = app.token_2022_try_create_mint_account(
         AppUser::Admin,
         None,
-        Some(&[ExtensionType::GroupPointer]),
+        Some(&[ExtensionType::MetadataPointer]),
     )?;
 
     let mint_pubkey = &mint_keypair.pubkey().to_bytes();
@@ -122,12 +122,12 @@ fn initialize_and_update_group_pointer() -> TestResult<()> {
     let mint_authority = AppUser::Admin;
     let freeze_authority = Some(AppUser::Admin.pubkey());
 
-    let group_pointer = GroupPointer {
+    let metadata_pointer = MetadataPointer {
         authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&mint_authority.pubkey())),
-        group_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
+        metadata_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
     };
 
-    app.token_2022_try_initialize_group_pointer(
+    app.token_2022_try_initialize_metadata_pointer(
         Target::Spl,
         AppUser::Admin,
         mint_pubkey,
@@ -145,11 +145,11 @@ fn initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
-        group_pointer
+        app.token_2022_query_metadata_pointer(Target::Spl, mint_pubkey)?,
+        metadata_pointer
     );
 
-    app.token_2022_try_update_group_pointer(
+    app.token_2022_try_update_metadata_pointer(
         Target::Spl,
         AppUser::Admin,
         mint_pubkey,
@@ -158,10 +158,10 @@ fn initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
-        GroupPointer {
+        app.token_2022_query_metadata_pointer(Target::Spl, mint_pubkey)?,
+        MetadataPointer {
             authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&mint_authority.pubkey())),
-            group_address: OptionalNonZeroPubkey::default(),
+            metadata_address: OptionalNonZeroPubkey::default(),
         }
     );
 
@@ -169,12 +169,12 @@ fn initialize_and_update_group_pointer() -> TestResult<()> {
 }
 
 #[test]
-fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
+fn proxy_initialize_and_update_metadata_pointer() -> TestResult<()> {
     let mut app = App::new(false);
     let (_, mint_keypair) = app.token_2022_try_create_mint_account(
         AppUser::Admin,
         None,
-        Some(&[ExtensionType::GroupPointer]),
+        Some(&[ExtensionType::MetadataPointer]),
     )?;
 
     let mint_pubkey = &mint_keypair.pubkey().to_bytes();
@@ -182,12 +182,12 @@ fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
     let mint_authority = AppUser::Admin;
     let freeze_authority = Some(AppUser::Admin.pubkey());
 
-    let group_pointer = GroupPointer {
+    let metadata_pointer = MetadataPointer {
         authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&mint_authority.pubkey())),
-        group_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
+        metadata_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(mint_pubkey)),
     };
 
-    app.token_2022_try_initialize_group_pointer(
+    app.token_2022_try_initialize_metadata_pointer(
         Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
@@ -205,7 +205,7 @@ fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     // execute 2nd time to run internal checks
-    app.token_2022_try_initialize_group_pointer(
+    app.token_2022_try_initialize_metadata_pointer(
         Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
@@ -214,15 +214,15 @@ fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
-        group_pointer
+        app.token_2022_query_metadata_pointer(Target::Spl, mint_pubkey)?,
+        metadata_pointer
     );
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Proxy, mint_pubkey)?,
-        group_pointer
+        app.token_2022_query_metadata_pointer(Target::Proxy, mint_pubkey)?,
+        metadata_pointer
     );
 
-    app.token_2022_try_update_group_pointer(
+    app.token_2022_try_update_metadata_pointer(
         Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
@@ -231,18 +231,18 @@ fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Spl, mint_pubkey)?,
-        GroupPointer {
+        app.token_2022_query_metadata_pointer(Target::Spl, mint_pubkey)?,
+        MetadataPointer {
             authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&mint_authority.pubkey())),
-            group_address: OptionalNonZeroPubkey::default(),
+            metadata_address: OptionalNonZeroPubkey::default(),
         }
     );
 
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Proxy, mint_pubkey)?,
-        GroupPointer {
+        app.token_2022_query_metadata_pointer(Target::Proxy, mint_pubkey)?,
+        MetadataPointer {
             authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&mint_authority.pubkey())),
-            group_address: OptionalNonZeroPubkey::default(),
+            metadata_address: OptionalNonZeroPubkey::default(),
         }
     );
 
@@ -250,12 +250,12 @@ fn proxy_initialize_and_update_group_pointer() -> TestResult<()> {
 }
 
 #[test]
-fn proxy_initialize_and_update_group_pointer_with_multisig() -> TestResult<()> {
+fn proxy_initialize_and_update_metadata_pointer_with_multisig() -> TestResult<()> {
     let mut app = App::new(false);
     let (_, mint_keypair) = app.token_2022_try_create_mint_account(
         AppUser::Admin,
         None,
-        Some(&[ExtensionType::GroupPointer]),
+        Some(&[ExtensionType::MetadataPointer]),
     )?;
 
     let mint_pubkey = &mint_keypair.pubkey().to_bytes();
@@ -279,15 +279,15 @@ fn proxy_initialize_and_update_group_pointer_with_multisig() -> TestResult<()> {
 
     let multisig_authority = multisig_kp.pubkey().to_bytes().into();
     let freeze_authority = Some(AppUser::Admin.pubkey());
-    let initial_group_address = mint_pubkey;
+    let initial_metadata_address = mint_pubkey;
 
-    // initialize group pointer with multisig authority
-    app.token_2022_try_initialize_group_pointer(
+    // initialize metadata pointer with multisig authority
+    app.token_2022_try_initialize_metadata_pointer(
         Target::Proxy,
         AppUser::Admin,
         mint_pubkey,
         Some(&multisig_authority),
-        Some(initial_group_address),
+        Some(initial_metadata_address),
     )?;
 
     app.token_2022_try_initialize_mint(
@@ -300,40 +300,40 @@ fn proxy_initialize_and_update_group_pointer_with_multisig() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Proxy, mint_pubkey)?,
-        GroupPointer {
+        app.token_2022_query_metadata_pointer(Target::Proxy, mint_pubkey)?,
+        MetadataPointer {
             authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&multisig_authority)),
-            group_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(initial_group_address)),
+            metadata_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(initial_metadata_address)),
         }
     );
 
-    // create a new group address for the update
-    let (_, new_group_keypair) = app.token_2022_try_create_mint_account(
+    // create a new metadata address for the update
+    let (_, new_metadata_keypair) = app.token_2022_try_create_mint_account(
         AppUser::Admin,
         None,
-        Some(&[ExtensionType::TokenGroup]),
+        Some(&[ExtensionType::MetadataPointer]),
     )?;
-    let new_group_address = &new_group_keypair.pubkey().to_bytes();
+    let new_metadata_address = &new_metadata_keypair.pubkey().to_bytes();
 
-    // update group pointer with sufficient multisig signers (signer1 + signer2)
-    app.token_2022_try_update_group_pointer_multisig(
+    // update metadata pointer with sufficient multisig signers (signer1 + signer2)
+    app.token_2022_try_update_metadata_pointer_multisig(
         Target::Proxy,
         mint_pubkey,
         &multisig_authority,
         &[signer1, signer2],
-        Some(new_group_address),
+        Some(new_metadata_address),
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Proxy, mint_pubkey)?,
-        GroupPointer {
+        app.token_2022_query_metadata_pointer(Target::Proxy, mint_pubkey)?,
+        MetadataPointer {
             authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&multisig_authority)),
-            group_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(new_group_address)),
+            metadata_address: OptionalNonZeroPubkey(pin_pubkey_to_addr(new_metadata_address)),
         }
     );
 
-    // update to remove group address
-    app.token_2022_try_update_group_pointer_multisig(
+    // update to remove metadata address
+    app.token_2022_try_update_metadata_pointer_multisig(
         Target::Proxy,
         mint_pubkey,
         &multisig_authority,
@@ -342,10 +342,10 @@ fn proxy_initialize_and_update_group_pointer_with_multisig() -> TestResult<()> {
     )?;
 
     assert_eq!(
-        app.token_2022_query_group_pointer(Target::Proxy, mint_pubkey)?,
-        GroupPointer {
+        app.token_2022_query_metadata_pointer(Target::Proxy, mint_pubkey)?,
+        MetadataPointer {
             authority: OptionalNonZeroPubkey(pin_pubkey_to_addr(&multisig_authority)),
-            group_address: OptionalNonZeroPubkey::default(),
+            metadata_address: OptionalNonZeroPubkey::default(),
         }
     );
 
