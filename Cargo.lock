@@ -5230,6 +5230,7 @@ dependencies = [
  "solana-system-interface 2.0.0",
  "solana-transaction",
  "spl-associated-token-account",
+ "spl-discriminator 0.5.1",
  "spl-pod 0.7.1",
  "spl-token",
  "spl-token-2022-interface",

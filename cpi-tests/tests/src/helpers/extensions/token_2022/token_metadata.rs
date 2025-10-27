@@ -1,24 +1,10 @@
 use {
     crate::helpers::suite::{
-        core::{
-            extension::{get_account_data, send_tx},
-            App, ProgramId,
-        },
-        types::{
-            addr_to_sol_pubkey, pin_pubkey_to_addr, to_optional_non_zero_pubkey, AppUser,
-            SolPubkey, Target, TestError, TestResult,
-        },
+        core::{extension::send_tx, App, ProgramId},
+        types::{addr_to_sol_pubkey, AppUser, Target, TestResult},
     },
     litesvm::types::TransactionMetadata,
-    // pinocchio::pubkey::Pubkey,
     solana_address::Address,
-    // solana_pubkey::Pubkey,
-    spl_token_2022_interface::{
-        extension::{
-            metadata_pointer::MetadataPointer, BaseStateWithExtensions, StateWithExtensions,
-        },
-        state::Mint,
-    },
 };
 
 pub trait Token2022TokenMetadataExtension {
@@ -35,10 +21,6 @@ pub trait Token2022TokenMetadataExtension {
         uri: String,
     ) -> TestResult<TransactionMetadata>;
 }
-use spl_token_metadata_interface::{
-    instruction::{initialize, update_field},
-    state::{Field, TokenMetadata},
-};
 
 impl Token2022TokenMetadataExtension for App {
     fn token_2022_try_initialize_token_metadata(
@@ -63,7 +45,7 @@ impl Token2022TokenMetadataExtension for App {
 
         let signers = &[sender.keypair()];
 
-        let mut ix = spl_token_metadata_interface::instruction::initialize(
+        let ix = spl_token_metadata_interface::instruction::initialize(
             &token_2022_program_addr,
             metadata,
             update_authority,
@@ -73,20 +55,6 @@ impl Token2022TokenMetadataExtension for App {
             symbol,
             uri,
         );
-
-        ////DEBUG
-        println!("transaction account at index 1 : {:?}", ix.accounts[1]);
-        println!("update authority account : {:?}", update_authority);
-        println!("metadata account : {:?}", metadata);
-        // println!("ix accounts : {:?}", ix.accounts);
-        //  println!("update_authority_balance : {:?}", app.get_coin_balance(update_authority));
-        /////
-        ///
-        let acc = self
-            .litesvm
-            .get_account(&addr_to_sol_pubkey(update_authority))
-            .unwrap();
-        println!("update authority lamports in LiteSVM: {}", acc.lamports);
 
         let additional_accounts = [solana_instruction::AccountMeta::new_readonly(
             token_2022_program,
@@ -107,14 +75,11 @@ impl Token2022TokenMetadataExtension for App {
             data: ix.data,
         };
 
-        println!("\n ix legacy accounts : {:?} \n", ix_legacy.accounts);
-
         if let Target::Proxy = target {
             ix_legacy.program_id = token_2022_proxy;
             ix_legacy.accounts.extend_from_slice(&additional_accounts);
         }
 
-        ////@audit :: maybe send direct litesvm tx without catching error, if data is changed correctly go ahead then
         send_tx(
             &mut self.litesvm,
             &[ix_legacy],
