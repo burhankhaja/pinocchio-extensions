@@ -16,6 +16,8 @@ pub mod permanent_delegate;
 pub mod token_group;
 #[cfg(test)]
 pub mod token_group_member;
+// #[cfg(test)]
+pub mod token_metadata;
 
 pub mod helpers {
     pub mod extensions {
@@ -29,6 +31,7 @@ pub mod helpers {
             pub mod metadata_pointer;
             pub mod permanent_delegate;
             pub mod token_group;
+            pub mod token_metadata;
         }
     }
 

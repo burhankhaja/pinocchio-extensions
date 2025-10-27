@@ -5234,6 +5234,7 @@ dependencies = [
  "spl-token",
  "spl-token-2022-interface",
  "spl-token-group-interface 0.7.1",
+ "spl-token-metadata-interface 0.8.0",
  "strum",
  "strum_macros",
  "token-2022-proxy",
@@ -5317,6 +5318,7 @@ dependencies = [
  "spl-pod 0.7.1",
  "spl-token-2022-interface",
  "spl-token-group-interface 0.7.1",
+ "spl-token-metadata-interface 0.8.0",
 ]
 
 [[package]]

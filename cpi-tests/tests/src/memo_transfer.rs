@@ -358,7 +358,7 @@ fn proxy_disable_memo_transfer_with_multisig() -> TestResult<()> {
 
     let (_, multisig_kp) = app.token_2022_try_create_multisig(AppUser::Admin, None)?;
     let multisig_pubkey: &[u8; 32] = &multisig_kp.pubkey().to_bytes().into();
-    
+
     app.token_2022_try_initialize_multisig(
         Target::Spl, // dev: Using Target::Spl is fine here; routing through Proxy would need a dedicated InitializeMultisig helper.
         AppUser::Admin,

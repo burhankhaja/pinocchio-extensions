@@ -359,6 +359,7 @@ pub mod extension {
                     println!("Transaction logs: {:#?}\n", logs);
                 }
 
+                println!("LITESVM ERROR STRUCT: {:#?}", e); // <--BURHAN DEBUG
                 Err(get_test_error_from_logs(logs))
             }
         }
